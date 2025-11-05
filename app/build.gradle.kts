@@ -1,29 +1,26 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
+
 android {
     namespace = "com.example.handyhood"
     compileSdk = 34
+
     defaultConfig {
         applicationId = "com.example.handyhood"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
-
-        kotlinOptions {
-            jvmTarget = "17"
-        }
     }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -37,19 +34,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
     kotlinOptions {
         jvmTarget = "17"
     }
-
     buildFeatures {
         compose = true
     }
-
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -58,7 +51,6 @@ android {
 }
 
 dependencies {
-    // Compose BOM - compatible with AGP 8.3.0 and compileSdk 34
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
 
     // Core Compose dependencies
@@ -69,10 +61,10 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.foundation:foundation-layout")
 
-    // Navigation Compose - CRITICAL for navigation
+    // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
-    // Material Icons Extended - for all Material icons
+    // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended:1.6.1")
 
     // Core Android dependencies
@@ -83,6 +75,18 @@ dependencies {
 
     // Animation support
     implementation("androidx.compose.animation:animation:1.6.1")
+
+    // Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
+
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+
+    // Firebase Analytics (optional)
+    implementation("com.google.firebase:firebase-analytics")
+
+    // Coroutines support for Firebase
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
