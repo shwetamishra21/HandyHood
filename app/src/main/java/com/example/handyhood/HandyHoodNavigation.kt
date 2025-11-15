@@ -1,21 +1,22 @@
 package com.example.handyhood
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.handyhood.ui.screens.DashboardScreen
 
+// --------------------------------------------
+// Screen routes used in Bottom Navigation
+// --------------------------------------------
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Welcome : Screen("welcome", "Welcome", Icons.Default.Home)
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
@@ -61,9 +62,10 @@ fun HandyHoodNavigation() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Dashboard.route,
+            startDestination = Screen.Welcome.route, // Start at Welcome screen
             modifier = Modifier.padding(paddingValues)
         ) {
+            // Welcome Screen
             composable(Screen.Welcome.route) {
                 WelcomeScreen(
                     onGetStartedClick = {
@@ -74,20 +76,31 @@ fun HandyHoodNavigation() {
                 )
             }
 
+            // Dashboard Screen
             composable(Screen.Dashboard.route) {
                 DashboardScreen()
             }
 
+            // Search Screen
             composable(Screen.Search.route) {
                 SearchScreen()
             }
 
+            // Inbox Screen
             composable(Screen.Inbox.route) {
                 InboxScreen()
             }
 
+            // Profile Screen (Frontend-only)
             composable(Screen.Profile.route) {
-                ProfileScreen()
+                ProfileScreen(
+                    userName = "Guest User",
+                    onSignOut = {
+                        navController.navigate(Screen.Welcome.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     }

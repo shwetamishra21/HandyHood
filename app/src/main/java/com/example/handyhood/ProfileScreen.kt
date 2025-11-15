@@ -1,6 +1,6 @@
-// Location: app/src/main/java/com/example/handyhood/ProfileScreen.kt
 package com.example.handyhood
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,127 +11,128 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseUser
+import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.handyhood.auth.SupabaseAuthViewModel
 import com.example.handyhood.ui.theme.HandyHoodTheme
+import com.example.handyhood.ui.theme.LightBlueGradient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    user: FirebaseUser?,
-    onSignOut: () -> Unit,
-    modifier: Modifier = Modifier
+    userName: String = "Resident",
+    onSignOut: () -> Unit = {}
 ) {
-    var showSignOutDialog by remember { mutableStateOf(false) }
+    val authViewModel: SupabaseAuthViewModel = viewModel()
+    val email = authViewModel.currentUserEmail() ?: "Not Logged In"
+    var showDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier
+    Box(
+        modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(LightBlueGradient)
+            .padding(16.dp)
     ) {
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Profile Header
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Spacer(Modifier.height(32.dp))
+
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                ),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.elevatedCardElevation(6.dp)
             ) {
-                Card(
-                    modifier = Modifier.size(100.dp),
-                    shape = CircleShape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier.size(50.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary
+                    Card(
+                        modifier = Modifier.size(100.dp),
+                        shape = CircleShape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Profile Picture",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
                     }
+
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = userName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = email,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(40.dp))
 
-                Text(
-                    text = user?.displayName ?: "User",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = user?.email ?: "No email",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Button(
+                onClick = { showDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Sign Out", fontWeight = FontWeight.SemiBold)
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Sign Out Button
-        OutlinedButton(
-            onClick = { showSignOutDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("Confirm Sign Out") },
+                text = { Text("Are you sure you want to sign out?", textAlign = TextAlign.Center) },
+                confirmButton = {
+                    Button(onClick = {
+                        showDialog = false
+                        authViewModel.signOut()
+                        onSignOut()
+                    }) {
+                        Text("Sign Out")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { showDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
             )
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Logout,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "Sign Out",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
         }
     }
+}
 
-    // Sign Out Dialog
-    if (showSignOutDialog) {
-        AlertDialog(
-            onDismissRequest = { showSignOutDialog = false },
-            title = { Text("Sign Out") },
-            text = { Text("Are you sure you want to sign out?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showSignOutDialog = false
-                        onSignOut()
-                    }
-                ) {
-                    Text("Sign Out")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showSignOutDialog = false }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
+@Preview(showBackground = true)
+@Composable
+fun ProfileScreenPreview() {
+    HandyHoodTheme {
+        ProfileScreen()
     }
 }
