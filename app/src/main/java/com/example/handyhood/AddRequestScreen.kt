@@ -1,0 +1,197 @@
+package com.example.handyhood.ui.screens
+import com.example.handyhood.data.RequestRepository
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import com.example.handyhood.ui.theme.LightBlueGradient
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddRequestScreen(navController: NavHostController) {
+
+    var category by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var preferredDate by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    // Date picker with initial value so selectedDateMillis is never null
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("New Service Request") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .background(LightBlueGradient)
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+
+            // ----- FORM CARD -----
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(4.dp)
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    // CATEGORY DROPDOWN
+                    Text("Service Category", fontWeight = FontWeight.SemiBold)
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        TextField(
+                            value = category,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Select Category") },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+
+                        val options = listOf(
+                            "Electrician", "Plumber", "Carpenter",
+                            "Painter", "Cleaning", "AC Repair"
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            options.forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(item) },
+                                    onClick = {
+                                        category = item
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // TITLE
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Request Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // DESCRIPTION
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Describe your issue") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                        maxLines = 5
+                    )
+
+                    // DATE PICKER TEXTFIELD
+                    OutlinedTextField(
+                        value = preferredDate,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Preferred Date") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDatePicker = true }
+                    )
+                }
+            }
+
+            // SUBMIT BUTTON
+            // SUBMIT BUTTON
+            val coroutineScope = rememberCoroutineScope()
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        RequestRepository.addRequest(
+                            category = category,
+                            title = title,
+                            description = description,
+                            preferredDate = preferredDate
+                        )
+                        navController.popBackStack()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Submit Request", fontWeight = FontWeight.SemiBold)
+            }
+
+
+            // ----- DATE PICKER DIALOG -----
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val millis =
+                                    datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+
+                                preferredDate = SimpleDateFormat(
+                                    "dd/MM/yyyy",
+                                    Locale.getDefault()
+                                ).format(Date(millis))
+
+                                showDatePicker = false
+                            }
+                        ) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
+                }
+            }
+        }
+    }
+}

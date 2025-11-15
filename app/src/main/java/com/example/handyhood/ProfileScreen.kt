@@ -1,23 +1,32 @@
-package com.example.handyhood
+package com.example.handyhood.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.style.TextAlign
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.handyhood.auth.SupabaseAuthViewModel
-import com.example.handyhood.ui.theme.HandyHoodTheme
+import coil.compose.rememberAsyncImagePainter
+import com.example.handyhood.data.ProfileData
+import com.example.handyhood.data.ProfileRepository
 import com.example.handyhood.ui.theme.LightBlueGradient
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,9 +34,34 @@ fun ProfileScreen(
     userName: String = "Resident",
     onSignOut: () -> Unit = {}
 ) {
-    val authViewModel: SupabaseAuthViewModel = viewModel()
-    val email = authViewModel.currentUserEmail() ?: "Not Logged In"
-    var showDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Load profile data
+    val profile by ProfileRepository.loadProfile(context).collectAsState(
+        initial = ProfileData("", "", "", "", "", false)
+    )
+
+    var name by remember { mutableStateOf(profile.name) }
+    var email by remember { mutableStateOf(profile.email) }
+    var neighborhood by remember { mutableStateOf(profile.neighborhood) }
+    var birthday by remember { mutableStateOf(profile.birthday) }
+    var verified by remember { mutableStateOf(profile.verified) }
+    var imageUri by remember { mutableStateOf(profile.imageUri) }
+
+    // Image Picker
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { imageUri = it.toString() }
+    }
+
+    // Birthday Picker
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
 
     Box(
         modifier = Modifier
@@ -35,104 +69,149 @@ fun ProfileScreen(
             .background(LightBlueGradient)
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(32.dp))
 
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Profile Image
+            Image(
+                painter = rememberAsyncImagePainter(
+                    if (imageUri.isNotEmpty()) imageUri else "https://i.imgur.com/4M7IWwP.png"
+                ),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .clickable { imagePicker.launch("image/*") }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = verified,
+                    onCheckedChange = { verified = it }
+                )
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFA726)
+                )
+                Text(
+                    "Community Verified",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+
+            Spacer(modifier = Modifier.height(25.dp))
+
+            // Info card
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                ),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.elevatedCardElevation(6.dp)
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                )
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Card(
-                        modifier = Modifier.size(100.dp),
-                        shape = CircleShape,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = "Profile Picture",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                        }
-                    }
 
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = userName,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                Column(modifier = Modifier.padding(20.dp)) {
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Full Name") },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
-                        text = email,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = neighborhood,
+                        onValueChange = { neighborhood = it },
+                        label = { Text("Neighborhood") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = birthday,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Birthday") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDatePicker = true }
                     )
                 }
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Button(
-                onClick = { showDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Logout, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Sign Out", fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Confirm Sign Out") },
-                text = { Text("Are you sure you want to sign out?", textAlign = TextAlign.Center) },
-                confirmButton = {
-                    Button(onClick = {
-                        showDialog = false
-                        authViewModel.signOut()
-                        onSignOut()
-                    }) {
-                        Text("Sign Out")
+                onClick = {
+                    scope.launch {
+                        ProfileRepository.saveProfile(
+                            context,
+                            name,
+                            email,
+                            neighborhood,
+                            birthday,
+                            imageUri,
+                            verified
+                        )
                     }
                 },
-                dismissButton = {
-                    OutlinedButton(onClick = { showDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+                Text("Save Profile", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedButton(
+                onClick = { onSignOut() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+                Text("Sign Out")
+            }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun ProfileScreenPreview() {
-    HandyHoodTheme {
-        ProfileScreen()
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                        birthday = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            .format(Date(millis))
+                        showDatePicker = false
+                    }
+                ) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 }
