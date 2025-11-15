@@ -67,5 +67,6 @@ class SupabaseAuthViewModel : ViewModel() {
 
     fun currentUserEmail(): String? {
         return auth.currentUserOrNull()?.email
+
     }
 }
