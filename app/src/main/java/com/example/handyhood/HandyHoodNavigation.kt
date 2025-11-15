@@ -12,22 +12,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.handyhood.ui.screens.DashboardScreen
+import com.example.handyhood.ui.screens.*
 
-// --------------------------------------------
-// Screen routes used in Bottom Navigation
-// --------------------------------------------
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Welcome : Screen("welcome", "Welcome", Icons.Default.Home)
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
     object Search : Screen("search", "Search", Icons.Default.Search)
     object Inbox : Screen("inbox", "Inbox", Icons.Default.Inbox)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
+    object Requests : Screen("requests", "My Requests", Icons.Default.List)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HandyHoodNavigation() {
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -60,12 +59,20 @@ fun HandyHoodNavigation() {
             }
         }
     ) { paddingValues ->
+
         NavHost(
             navController = navController,
-            startDestination = Screen.Welcome.route, // Start at Welcome screen
+            startDestination = Screen.Welcome.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            // Welcome Screen
+            composable(Screen.Requests.route) {
+                RequestsScreen(navController)
+            }
+
+            composable("add_request") {
+                AddRequestScreen(navController)
+            }
+
             composable(Screen.Welcome.route) {
                 WelcomeScreen(
                     onGetStartedClick = {
@@ -76,22 +83,18 @@ fun HandyHoodNavigation() {
                 )
             }
 
-            // Dashboard Screen
             composable(Screen.Dashboard.route) {
-                DashboardScreen()
+                DashboardScreen(navController)
             }
 
-            // Search Screen
             composable(Screen.Search.route) {
                 SearchScreen()
             }
 
-            // Inbox Screen
             composable(Screen.Inbox.route) {
                 InboxScreen()
             }
 
-            // Profile Screen (Frontend-only)
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     userName = "Guest User",
@@ -103,5 +106,6 @@ fun HandyHoodNavigation() {
                 )
             }
         }
+
     }
 }
