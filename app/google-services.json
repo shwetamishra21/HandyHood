@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "494248501384",
+    "project_id": "handyhood-9c415",
+    "storage_bucket": "handyhood-9c415.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494248501384:android:482327795bfdfcca67ff3d",
+        "android_client_info": {
+          "package_name": "com.example.handyhood"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQycCx2q2S4KzFinAK6mWs9xP93j4slJg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

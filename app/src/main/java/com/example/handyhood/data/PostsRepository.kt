@@ -2,12 +2,16 @@
 
 package com.example.handyhood.data
 
-import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.builtins.ListSerializer
+
+/**
+ * PostsRepository - placeholder implementation (Supabase removed).
+ *
+ * TODO: Replace the internals with actual backend calls (e.g. Firestore, REST API, Hasura).
+ * For now these functions are no-ops / return empty lists so the app builds cleanly.
+ */
 
 @Serializable
 data class Post(
@@ -20,23 +24,26 @@ data class Post(
 
 object PostsRepository {
 
+    /**
+     * Fetch posts from backend.
+     * Current stub: returns empty list.
+     * Replace by calling your backend and mapping results to [Post].
+     */
     suspend fun fetchPosts(): List<Post> = withContext(Dispatchers.IO) {
         try {
-            val result = SupabaseManager.client
-                .from("posts")
-                .select()
-
-            Json.decodeFromString(
-                ListSerializer(Post.serializer()),
-                result.data ?: "[]"
-            )
-
+            // TODO: Implement: query your backend -> map to Post list
+            emptyList()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
     }
 
+    /**
+     * Add a new post to backend.
+     * Current stub: no-op.
+     * Replace with an insert call to your backend.
+     */
     suspend fun addPost(title: String, author: String, content: String) {
         withContext(Dispatchers.IO) {
             try {
@@ -47,9 +54,7 @@ object PostsRepository {
                     timestamp = System.currentTimeMillis()
                 )
 
-                SupabaseManager.client
-                    .from("posts")
-                    .insert(newPost)
+                // TODO: Implement: send `newPost` to backend (Firestore/REST/etc)
 
             } catch (e: Exception) {
                 e.printStackTrace()

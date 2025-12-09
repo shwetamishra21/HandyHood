@@ -1,9 +1,10 @@
 package com.example.handyhood.ui.screens
+
 import com.example.handyhood.data.RequestRepository
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -141,7 +142,6 @@ fun AddRequestScreen(navController: NavHostController) {
                 }
             }
 
-            // SUBMIT BUTTON
             // SUBMIT BUTTON
             val coroutineScope = rememberCoroutineScope()
 

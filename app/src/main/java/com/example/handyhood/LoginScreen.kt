@@ -38,7 +38,8 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val authViewModel: SupabaseAuthViewModel = viewModel()
+    // NOTE: swapped SupabaseAuthViewModel -> generic AuthViewModel (backend-agnostic stub).
+    val authViewModel: AuthViewModel = viewModel()
     val state by authViewModel.authState.collectAsState()
 
     var email by remember { mutableStateOf("") }

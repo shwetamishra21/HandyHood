@@ -2,6 +2,9 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+
+    // Apply Google services plugin (version declared in settings.gradle.kts)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -54,11 +57,15 @@ android {
 
 dependencies {
 
-    // --- Supabase SDK ---
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.3")
+    // --- Firebase BOM (manages Firebase library versions) ---
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+
+    // Core Firebase products (no versions when using BoM)
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
     // --- Serialization (compatible with Kotlin 1.9.24) ---
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
@@ -95,8 +102,9 @@ dependencies {
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
-// --- REQUIRED: Ktor HTTP Engine (fixes crash) ---
+    // --- REQUIRED: Ktor HTTP Engine (fixes crash) ---
     implementation("io.ktor:ktor-client-okhttp:2.3.9")
+
     // --- Debug tools ---
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -104,7 +112,6 @@ dependencies {
     // DataStore (Preferences)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-// Coil for image loading
+    // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.4.0")
-
 }

@@ -1,8 +1,14 @@
 package com.example.handyhood.data
 
-import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+/**
+ * RequestRepository - placeholder implementation without Supabase.
+ *
+ * TODO: Replace these stubs with real backend implementations (e.g. Firestore collections,
+ * REST endpoints, GraphQL etc.)
+ */
 
 object RequestRepository {
 
@@ -20,16 +26,22 @@ object RequestRepository {
             "preferred_date" to preferredDate
         )
 
-        SupabaseManager.client
-            .from("requests")
-            .insert(requestData)
+        try {
+            // TODO: Implement backend call to insert a request with `requestData`
+            // e.g. Firestore: db.collection("requests").add(requestData)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun fetchRequests(): List<Map<String, Any?>> =
         withContext(Dispatchers.IO) {
-            SupabaseManager.client
-                .from("requests")
-                .select()
-                .decodeList<Map<String, Any?>>()
+            try {
+                // TODO: Implement backend query to fetch requests
+                emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
         }
 }

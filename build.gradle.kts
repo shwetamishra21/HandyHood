@@ -1,9 +1,8 @@
+// Minimal root build script. Plugin versions live in settings.gradle.kts (pluginManagement).
 plugins {
-    id("com.android.application") version "8.3.2" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24" apply false
+    // No root plugins required here; all module plugins are declared in settings.gradle.kts
 }
 
-    tasks.register("clean", Delete::class) {
+tasks.register<Delete>("clean") {
     delete(rootProject.buildDir)
 }

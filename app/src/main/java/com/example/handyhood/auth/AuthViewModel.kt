@@ -2,13 +2,18 @@ package com.example.handyhood.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.handyhood.data.SupabaseManager
-import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.gotrue.providers.builtin.Email
-import io.github.jan.supabase.gotrue.user.UserInfo
+import com.example.handyhood.data.UserInfo
+import com.example.handyhood.data.backend.BackendAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
+/**
+ * Clean, Supabase-free Auth ViewModel.
+ *
+ * NOTE: This file no longer depends on Supabase. It delegates auth operations to `BackendAuth`.
+ * Replace `BackendAuth`'s stub implementations with your chosen backend (Firestore/Auth/REST/etc).
+ */
 
 sealed class AuthResult {
     object Idle : AuthResult()
@@ -17,9 +22,10 @@ sealed class AuthResult {
     data class Error(val message: String) : AuthResult()
 }
 
-class SupabaseAuthViewModel : ViewModel() {
+class AuthViewModel : ViewModel() {
 
-    private val auth = SupabaseManager.client.auth
+    // Delegates to a platform-agnostic backend interface (currently a stub).
+    private val auth = BackendAuth
 
     private val _authState = MutableStateFlow<AuthResult>(AuthResult.Idle)
     val authState: StateFlow<AuthResult> = _authState
@@ -28,11 +34,8 @@ class SupabaseAuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _authState.value = AuthResult.Loading
-                auth.signUpWith(Email) {
-                    this.email = email
-                    this.password = password
-                }
-                _authState.value = AuthResult.Success(auth.currentUserOrNull())
+                val user = auth.signUp(email, password)
+                _authState.value = AuthResult.Success(user)
             } catch (e: Exception) {
                 _authState.value = AuthResult.Error(e.message ?: "Signup failed")
             }
@@ -43,11 +46,8 @@ class SupabaseAuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _authState.value = AuthResult.Loading
-                auth.signInWith(Email) {
-                    this.email = email
-                    this.password = password
-                }
-                _authState.value = AuthResult.Success(auth.currentUserOrNull())
+                val user = auth.signIn(email, password)
+                _authState.value = AuthResult.Success(user)
             } catch (e: Exception) {
                 _authState.value = AuthResult.Error(e.message ?: "Login failed")
             }
@@ -66,7 +66,6 @@ class SupabaseAuthViewModel : ViewModel() {
     }
 
     fun currentUserEmail(): String? {
-        return auth.currentUserOrNull()?.email
-
+        return auth.currentUserEmail()
     }
 }
