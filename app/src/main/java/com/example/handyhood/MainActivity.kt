@@ -9,9 +9,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.handyhood.auth.SupabaseAuthViewModel
 import com.example.handyhood.data.remote.SupabaseClient
+import com.example.handyhood.ui.screens.LoginScreen
 import com.example.handyhood.ui.theme.HandyHoodTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,11 +29,23 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+
+                    // 🔐 Auth gate (MINIMAL, SAFE)
+                    val authViewModel: SupabaseAuthViewModel = viewModel()
+                    val isLoggedIn = authViewModel.isLoggedIn()
+
                     // Optional debug check (safe)
                     SupabaseConnectionCheck()
 
-                    // Main navigation
-                    HandyHoodNavigation()
+                    if (isLoggedIn) {
+                        HandyHoodNavigation()
+                    } else {
+                        LoginScreen(
+                            onLoginSuccess = {
+                                // recomposition will show HandyHoodNavigation
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -38,7 +54,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SupabaseConnectionCheck() {
-
     LaunchedEffect(Unit) {
         try {
             val client = SupabaseClient.client
