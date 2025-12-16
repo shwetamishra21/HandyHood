@@ -16,6 +16,18 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+
+        // ✅ Supabase keys from local.properties (CORRECT)
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${project.findProperty("SUPABASE_URL")}\""
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_ANON_KEY",
+            "\"${project.findProperty("SUPABASE_ANON_KEY")}\""
+        )
     }
 
     buildTypes {
@@ -39,6 +51,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true   // 🔴 REQUIRED for BuildConfig
     }
 
     composeOptions {
@@ -54,16 +67,17 @@ android {
 
 dependencies {
 
-    // --- Supabase SDK ---
+    // ---------- Supabase ----------
+    implementation("io.github.jan-tennert.supabase:supabase-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:storage-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.3")
 
-    // --- Serialization (compatible with Kotlin 1.9.24) ---
+    // ---------- Serialization ----------
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
-    // --- Jetpack Compose ---
+    // ---------- Jetpack Compose ----------
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -72,39 +86,39 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.foundation:foundation-layout")
 
-    // --- Navigation ---
+    // ---------- Navigation ----------
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
-    // --- Coroutines ---
+    // ---------- Coroutines ----------
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // --- Icons + Lifecycle ---
-    implementation("androidx.compose.material:material-icons-extended:1.6.1")
+    // ---------- Lifecycle & Core ----------
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
 
-    // --- Animation ---
+    // ---------- Icons & Animation ----------
+    implementation("androidx.compose.material:material-icons-extended:1.6.1")
     implementation("androidx.compose.animation:animation:1.6.1")
 
-    // --- Testing ---
+    // ---------- Networking ----------
+    implementation("io.ktor:ktor-client-okhttp:2.3.9")
+
+    // ---------- DataStore ----------
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // ---------- Image Loading ----------
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // ---------- Debug ----------
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // ---------- Testing ----------
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-
-// --- REQUIRED: Ktor HTTP Engine (fixes crash) ---
-    implementation("io.ktor:ktor-client-okhttp:2.3.9")
-    // --- Debug tools ---
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    // DataStore (Preferences)
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-
-// Coil for image loading
-    implementation("io.coil-kt:coil-compose:2.4.0")
-
 }

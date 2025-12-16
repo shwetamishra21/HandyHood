@@ -7,12 +7,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.handyhood.data.remote.SupabaseClient
 import com.example.handyhood.ui.theme.HandyHoodTheme
-import com.example.handyhood.data.SupabaseManager
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,10 +25,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // ✅ Check Supabase connection when app starts
+                    // Optional debug check (safe)
                     SupabaseConnectionCheck()
 
-                    // ✅ Launch main navigation
+                    // Main navigation
                     HandyHoodNavigation()
                 }
             }
@@ -38,16 +38,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SupabaseConnectionCheck() {
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                val client = SupabaseManager.client
-                println("✅ Supabase Connected Successfully: ${client.supabaseUrl}")
-            } catch (e: Exception) {
-                println("❌ Supabase Connection Failed: ${e.message}")
-            }
+        try {
+            val client = SupabaseClient.client
+            println("✅ Supabase Connected Successfully: ${client.supabaseUrl}")
+        } catch (e: Exception) {
+            println("❌ Supabase Connection Failed: ${e.message}")
         }
     }
 }

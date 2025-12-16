@@ -7,7 +7,7 @@
 [![Android](https://img.shields.io/badge/Android-8.0+-blue.svg)](https://www.android.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com)
 [![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
-
+ 
 ---
 
 ## What is HandyHood?

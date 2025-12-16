@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import com.example.handyhood.data.remote.SupabaseClient
 import kotlinx.serialization.builtins.ListSerializer
 
 @Serializable
@@ -22,7 +23,7 @@ object PostsRepository {
 
     suspend fun fetchPosts(): List<Post> = withContext(Dispatchers.IO) {
         try {
-            val result = SupabaseManager.client
+            val result = SupabaseClient.client
                 .from("posts")
                 .select()
 
@@ -47,7 +48,7 @@ object PostsRepository {
                     timestamp = System.currentTimeMillis()
                 )
 
-                SupabaseManager.client
+                SupabaseClient.client
                     .from("posts")
                     .insert(newPost)
 

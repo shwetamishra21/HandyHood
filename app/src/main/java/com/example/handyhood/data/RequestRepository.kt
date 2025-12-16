@@ -3,6 +3,7 @@ package com.example.handyhood.data
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.handyhood.data.remote.SupabaseClient
 
 object RequestRepository {
 
@@ -20,14 +21,14 @@ object RequestRepository {
             "preferred_date" to preferredDate
         )
 
-        SupabaseManager.client
+        SupabaseClient.client
             .from("requests")
             .insert(requestData)
     }
 
     suspend fun fetchRequests(): List<Map<String, Any?>> =
         withContext(Dispatchers.IO) {
-            SupabaseManager.client
+            SupabaseClient.client
                 .from("requests")
                 .select()
                 .decodeList<Map<String, Any?>>()

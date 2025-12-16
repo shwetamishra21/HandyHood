@@ -2,9 +2,9 @@ package com.example.handyhood.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.handyhood.data.SupabaseManager
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
+import com.example.handyhood.data.remote.SupabaseClient
 import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +19,7 @@ sealed class AuthResult {
 
 class SupabaseAuthViewModel : ViewModel() {
 
-    private val auth = SupabaseManager.client.auth
+    private val auth = SupabaseClient.client.auth
 
     private val _authState = MutableStateFlow<AuthResult>(AuthResult.Idle)
     val authState: StateFlow<AuthResult> = _authState
