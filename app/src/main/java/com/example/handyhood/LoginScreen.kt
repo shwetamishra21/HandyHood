@@ -2,10 +2,7 @@ package com.example.handyhood.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,17 +17,16 @@ import com.example.handyhood.auth.SupabaseAuthViewModel
 @Composable
 fun LoginScreen(
     viewModel: SupabaseAuthViewModel = viewModel(),
-    onLoginSuccess: () -> Unit = {},
-    onNavigateToSignup: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {}
 ) {
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isSignup by remember { mutableStateOf(false) } // 🔑 toggle
 
     val authState by viewModel.authState.collectAsState()
 
-    // ✅ Trigger navigation on successful login
+    // Navigate after success (login OR signup)
     LaunchedEffect(authState) {
         if (authState is AuthResult.Success) {
             onLoginSuccess()
@@ -46,7 +42,7 @@ fun LoginScreen(
     ) {
 
         Text(
-            text = "Login",
+            text = if (isSignup) "Create Account" else "Login",
             style = MaterialTheme.typography.headlineMedium
         )
 
@@ -72,15 +68,12 @@ fun LoginScreen(
                 Icon(Icons.Default.Lock, contentDescription = null)
             },
             trailingIcon = {
-                IconButton(
-                    onClick = { passwordVisible = !passwordVisible }
-                ) {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector =
-                            if (passwordVisible)
-                                Icons.Default.Visibility
-                            else
-                                Icons.Default.VisibilityOff,
+                        if (passwordVisible)
+                            Icons.Default.Visibility
+                        else
+                            Icons.Default.VisibilityOff,
                         contentDescription = null
                     )
                 }
@@ -97,20 +90,29 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                viewModel.signIn(email.trim(), password)
+                if (isSignup) {
+                    viewModel.signUp(email.trim(), password)
+                } else {
+                    viewModel.signIn(email.trim(), password)
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Login")
+            Text(if (isSignup) "Sign Up" else "Login")
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ✅ NEW: navigate to signup screen
+        // 🔁 Toggle Login <-> Signup
         TextButton(
-            onClick = onNavigateToSignup
+            onClick = { isSignup = !isSignup }
         ) {
-            Text("New user? Create account")
+            Text(
+                if (isSignup)
+                    "Already have an account? Login"
+                else
+                    "New user? Create account"
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

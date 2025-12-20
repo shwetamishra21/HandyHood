@@ -16,9 +16,9 @@ import com.example.handyhood.ui.screens.*
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Welcome : Screen("welcome", "Welcome", Icons.Default.Home)
-    object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
+    object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
     object Search : Screen("search", "Search", Icons.Default.Search)
-    object Inbox : Screen("inbox", "Inbox", Icons.Default.Inbox)
+    object Inbox : Screen("inbox", "Inbox", Icons.Default.Email)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
     object Requests : Screen("requests", "My Requests", Icons.Default.List)
 }

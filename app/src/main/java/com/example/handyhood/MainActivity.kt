@@ -30,11 +30,11 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    // 🔐 Auth gate (MINIMAL, SAFE)
+                    // 🔐 Auth gate (UNCHANGED)
                     val authViewModel: SupabaseAuthViewModel = viewModel()
                     val isLoggedIn = authViewModel.isLoggedIn()
 
-                    // Optional debug check (safe)
+                    // Optional debug check (UNCHANGED)
                     SupabaseConnectionCheck()
 
                     if (isLoggedIn) {
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     } else {
                         LoginScreen(
                             onLoginSuccess = {
-                                // recomposition will show HandyHoodNavigation
+                                // auth state change triggers recomposition
                             }
                         )
                     }
