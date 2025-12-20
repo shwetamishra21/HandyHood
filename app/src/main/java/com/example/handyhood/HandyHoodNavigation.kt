@@ -88,7 +88,13 @@ fun HandyHoodNavigation() {
             }
 
             composable(Screen.Dashboard.route) {
-                DashboardScreen(navController)
+                DashboardScreen(
+                    navController = navController,
+                    userEmail = SupabaseClient.client
+                        .auth
+                        .currentUserOrNull()
+                        ?.email ?: "User"
+                )
             }
 
             composable(Screen.Search.route) {

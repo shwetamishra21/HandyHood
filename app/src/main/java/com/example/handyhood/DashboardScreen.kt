@@ -25,7 +25,11 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(navController: NavHostController) {
+fun DashboardScreen(
+navController: NavHostController,
+userEmail: String
+) {
+
 
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -109,7 +113,7 @@ fun DashboardScreen(navController: NavHostController) {
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Welcome to HandyHood! 👋",
+                                text = "Welcome, $userEmail \uD83D\uDC4B",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -282,6 +286,9 @@ fun DashboardScreen(navController: NavHostController) {
 @Composable
 fun DashboardPreview() {
     HandyHoodTheme {
-        DashboardScreen(rememberNavController())
+        DashboardScreen(
+            navController = rememberNavController(),
+            userEmail = "preview@handyhood.com"
+        )
     }
 }
