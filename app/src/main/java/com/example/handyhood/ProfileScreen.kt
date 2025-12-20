@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,8 +30,8 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userName: String = "Resident",
-    onSignOut: () -> Unit = {}
+    userName: String,                 // ✅ REQUIRED (from auth)
+    onSignOut: () -> Unit              // ✅ REQUIRED
 ) {
 
     val context = LocalContext.current
@@ -43,7 +42,7 @@ fun ProfileScreen(
         initial = ProfileData("", "", "", "", "", false)
     )
 
-    var name by remember { mutableStateOf(profile.name) }
+    var name by remember { mutableStateOf(profile.name.ifEmpty { userName }) } // ✅ use auth name
     var email by remember { mutableStateOf(profile.email) }
     var neighborhood by remember { mutableStateOf(profile.neighborhood) }
     var birthday by remember { mutableStateOf(profile.birthday) }
@@ -59,9 +58,7 @@ fun ProfileScreen(
 
     // Birthday Picker
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis()
-    )
+    val datePickerState = rememberDatePickerState()
 
     Box(
         modifier = Modifier
@@ -74,10 +71,10 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Profile Image
             Image(
                 painter = rememberAsyncImagePainter(
-                    if (imageUri.isNotEmpty()) imageUri else "https://i.imgur.com/4M7IWwP.png"
+                    if (imageUri.isNotEmpty()) imageUri
+                    else "https://i.imgur.com/4M7IWwP.png"
                 ),
                 contentDescription = null,
                 modifier = Modifier
@@ -88,9 +85,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = verified,
                     onCheckedChange = { verified = it }
@@ -100,23 +95,17 @@ fun ProfileScreen(
                     contentDescription = null,
                     tint = Color(0xFFFFA726)
                 )
-                Text(
-                    "Community Verified",
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Community Verified", fontWeight = FontWeight.SemiBold)
             }
-
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // Info card
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                 )
             ) {
-
                 Column(modifier = Modifier.padding(20.dp)) {
 
                     OutlinedTextField(
@@ -181,15 +170,16 @@ fun ProfileScreen(
                 Text("Save Profile", fontWeight = FontWeight.Bold)
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
+            // ✅ LOGOUT (final, correct)
             OutlinedButton(
-                onClick = { onSignOut() },
+                onClick = onSignOut,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp)
             ) {
-                Text("Sign Out")
+                Text("Logout")
             }
         }
     }

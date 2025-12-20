@@ -1,7 +1,9 @@
 package com.example.handyhood.auth
-import io.github.jan.supabase.gotrue.auth
+
 import com.example.handyhood.data.remote.SupabaseClient
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
+import io.github.jan.supabase.gotrue.user.UserInfo
 
 object AuthRepository {
 
@@ -13,7 +15,7 @@ object AuthRepository {
                 this.email = email
                 this.password = password
             }
-            AuthResult.Success(auth.currentUserOrNull()?.id ?: "")
+            AuthResult.Success(auth.currentUserOrNull())
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Signup failed")
         }
@@ -25,7 +27,7 @@ object AuthRepository {
                 this.email = email
                 this.password = password
             }
-            AuthResult.Success(auth.currentUserOrNull()?.id ?: "")
+            AuthResult.Success(auth.currentUserOrNull())
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Login failed")
         }
@@ -35,11 +37,12 @@ object AuthRepository {
         auth.signOut()
     }
 
-    fun currentUserId(): String? {
-        return auth.currentUserOrNull()?.id
+    fun currentUser(): UserInfo? {
+        return auth.currentUserOrNull()
     }
 
+    // ✅ SESSION-BASED (persists across app restarts)
     fun isLoggedIn(): Boolean {
-        return auth.currentUserOrNull() != null
+        return auth.currentSessionOrNull() != null
     }
 }
