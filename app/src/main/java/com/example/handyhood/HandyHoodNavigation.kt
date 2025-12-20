@@ -6,19 +6,21 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import io.github.jan.supabase.gotrue.auth
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
+import com.example.handyhood.auth.AuthResult
+import com.example.handyhood.auth.SupabaseAuthViewModel
+import com.example.handyhood.data.remote.SupabaseClient
 import com.example.handyhood.ui.screens.*
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Welcome : Screen("welcome", "Welcome", Icons.Default.Home)
-    object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
+    object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
     object Search : Screen("search", "Search", Icons.Default.Search)
-    object Inbox : Screen("inbox", "Inbox", Icons.Default.Email)
+    object Inbox : Screen("inbox", "Inbox", Icons.Default.Inbox)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
     object Requests : Screen("requests", "My Requests", Icons.Default.List)
 }
@@ -28,6 +30,12 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 fun HandyHoodNavigation() {
 
     val navController = rememberNavController()
+    val authViewModel: SupabaseAuthViewModel = viewModel()
+
+    // ✅ FIX: observe authState
+    val authState by authViewModel.authState.collectAsState()
+    val isLoggedIn = authState is AuthResult.Success
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -62,16 +70,12 @@ fun HandyHoodNavigation() {
 
         NavHost(
             navController = navController,
-            startDestination = Screen.Welcome.route,
+            startDestination = if (isLoggedIn)
+                Screen.Dashboard.route
+            else
+                Screen.Welcome.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Screen.Requests.route) {
-                RequestsScreen(navController)
-            }
-
-            composable("add_request") {
-                AddRequestScreen(navController)
-            }
 
             composable(Screen.Welcome.route) {
                 WelcomeScreen(
@@ -97,15 +101,25 @@ fun HandyHoodNavigation() {
 
             composable(Screen.Profile.route) {
                 ProfileScreen(
-                    userName = "Guest User",
+                    userName = SupabaseClient.client.auth
+                        .currentUserOrNull()
+                        ?.email ?: "User",
                     onSignOut = {
+                        authViewModel.signOut()
                         navController.navigate(Screen.Welcome.route) {
-                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            popUpTo(0)
                         }
                     }
                 )
             }
-        }
 
+            composable(Screen.Requests.route) {
+                RequestsScreen(navController)
+            }
+
+            composable("add_request") {
+                AddRequestScreen(navController)
+            }
+        }
     }
 }

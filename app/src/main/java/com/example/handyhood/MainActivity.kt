@@ -7,14 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
-import com.example.handyhood.data.remote.SupabaseClient
 import com.example.handyhood.ui.screens.LoginScreen
 import com.example.handyhood.ui.theme.HandyHoodTheme
 
@@ -30,44 +27,21 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    // 🔐 Auth gate (UNCHANGED)
                     val authViewModel: SupabaseAuthViewModel = viewModel()
-                    val isLoggedIn = authViewModel.isLoggedIn()
+                    val authState by authViewModel.authState.collectAsState()
 
-                    // Optional debug check (UNCHANGED)
-                    SupabaseConnectionCheck()
-
-                    if (isLoggedIn) {
-                        HandyHoodNavigation()
-                    } else {
-                        LoginScreen(
-                            onLoginSuccess = {
-                                // auth state change triggers recomposition
-                            }
-                        )
+                    when (authState) {
+                        is AuthResult.Success -> {
+                            HandyHoodNavigation()
+                        }
+                        else -> {
+                            LoginScreen(
+                                onLoginSuccess = { }
+                            )
+                        }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SupabaseConnectionCheck() {
-    LaunchedEffect(Unit) {
-        try {
-            val client = SupabaseClient.client
-            println("✅ Supabase Connected Successfully: ${client.supabaseUrl}")
-        } catch (e: Exception) {
-            println("❌ Supabase Connection Failed: ${e.message}")
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    HandyHoodTheme {
-        HandyHoodNavigation()
     }
 }

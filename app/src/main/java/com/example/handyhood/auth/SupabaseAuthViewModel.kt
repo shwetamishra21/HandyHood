@@ -31,8 +31,4 @@ class SupabaseAuthViewModel : ViewModel() {
             _authState.value = AuthResult.Idle
         }
     }
-
-    fun isLoggedIn(): Boolean {
-        return AuthRepository.isLoggedIn()
-    }
 }
