@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.example.handyhood.auth.AuthRepository
 import com.example.handyhood.data.ProfileData
 import com.example.handyhood.data.ProfileRepository
 import com.example.handyhood.ui.theme.LightBlueGradient
@@ -30,33 +31,49 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userName: String,                 // ✅ REQUIRED (from auth)
-    onSignOut: () -> Unit              // ✅ REQUIRED
+    userName: String,
+    onSignOut: () -> Unit
 ) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Load profile data
-    val profile by ProfileRepository.loadProfile(context).collectAsState(
+    // Local profile (unchanged)
+    val localProfile by ProfileRepository.loadProfile(context).collectAsState(
         initial = ProfileData("", "", "", "", "", false)
     )
 
-    var name by remember { mutableStateOf(profile.name.ifEmpty { userName }) } // ✅ use auth name
-    var email by remember { mutableStateOf(profile.email) }
-    var neighborhood by remember { mutableStateOf(profile.neighborhood) }
-    var birthday by remember { mutableStateOf(profile.birthday) }
-    var verified by remember { mutableStateOf(profile.verified) }
-    var imageUri by remember { mutableStateOf(profile.imageUri) }
+    // DB profile (NEW)
+    var dbProfile by remember { mutableStateOf<Map<String, Any?>?>(null) }
 
-    // Image Picker
+    LaunchedEffect(Unit) {
+        dbProfile = AuthRepository.fetchUserProfile()
+    }
+
+    var name by remember {
+        mutableStateOf(
+            dbProfile?.get("name")?.toString()
+                ?: localProfile.name.ifEmpty { userName }
+        )
+    }
+
+    var email by remember {
+        mutableStateOf(
+            dbProfile?.get("email")?.toString() ?: localProfile.email
+        )
+    }
+
+    var neighborhood by remember { mutableStateOf(localProfile.neighborhood) }
+    var birthday by remember { mutableStateOf(localProfile.birthday) }
+    var verified by remember { mutableStateOf(localProfile.verified) }
+    var imageUri by remember { mutableStateOf(localProfile.imageUri) }
+
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { imageUri = it.toString() }
     }
 
-    // Birthday Picker
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
@@ -119,7 +136,8 @@ fun ProfileScreen(
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {},
+                        readOnly = true,
                         label = { Text("Email") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -172,7 +190,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ✅ LOGOUT (final, correct)
             OutlinedButton(
                 onClick = onSignOut,
                 modifier = Modifier
@@ -190,9 +207,12 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val millis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-                        birthday = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                            .format(Date(millis))
+                        val millis =
+                            datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                        birthday = SimpleDateFormat(
+                            "dd/MM/yyyy",
+                            Locale.getDefault()
+                        ).format(Date(millis))
                         showDatePicker = false
                     }
                 ) { Text("OK") }

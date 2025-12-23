@@ -14,15 +14,11 @@ object AuthRepository {
 
     suspend fun signUp(email: String, password: String): AuthResult {
         return try {
-            // 1️⃣ Create auth user
             auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
-
-            // 2️⃣ Persist user profile (Day 3)
             createUserProfileIfMissing()
-
             AuthResult.Success(auth.currentUserOrNull())
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Signup failed")
@@ -53,16 +49,13 @@ object AuthRepository {
         return auth.currentSessionOrNull() != null
     }
 
-    // ✅ FULLY COMPATIBLE WITH YOUR SUPABASE-KT VERSION
     private suspend fun createUserProfileIfMissing() {
         val user = auth.currentUserOrNull() ?: return
 
         val rows: List<JsonObject> = db
             .from("users")
             .select {
-                filter {
-                    eq("id", user.id)
-                }
+                filter { eq("id", user.id) }
             }
             .decodeList()
 
@@ -74,5 +67,19 @@ object AuthRepository {
                 )
             )
         }
+    }
+
+    // ✅ Day 5.3 — READ profile from DB
+    suspend fun fetchUserProfile(): Map<String, Any?>? {
+        val user = auth.currentUserOrNull() ?: return null
+
+        val rows: List<JsonObject> = db
+            .from("users")
+            .select {
+                filter { eq("id", user.id) }
+            }
+            .decodeList()
+
+        return rows.firstOrNull()?.mapValues { it.value }
     }
 }

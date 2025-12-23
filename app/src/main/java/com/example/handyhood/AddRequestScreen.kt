@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -40,6 +41,12 @@ fun AddRequestScreen(navController: NavHostController) {
 
     val coroutineScope = rememberCoroutineScope()
 
+    // ✅ FORM VALIDATION (NEW)
+    val isFormValid = category.isNotBlank()
+            && title.isNotBlank()
+            && description.isNotBlank()
+            && preferredDate.isNotBlank()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,6 +77,7 @@ fun AddRequestScreen(navController: NavHostController) {
                 ),
                 elevation = CardDefaults.elevatedCardElevation(4.dp)
             ) {
+
                 Column(
                     modifier = Modifier
                         .padding(20.dp)
@@ -134,12 +142,18 @@ fun AddRequestScreen(navController: NavHostController) {
                         maxLines = 5
                     )
 
-                    // ✅ PREFERRED DATE (calendar-based)
+                    // PREFERRED DATE
                     OutlinedTextField(
                         value = preferredDate,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Preferred Date") },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = "Select date"
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showDatePicker = true }
@@ -147,8 +161,9 @@ fun AddRequestScreen(navController: NavHostController) {
                 }
             }
 
-            // SUBMIT BUTTON
+            // ✅ SUBMIT BUTTON (disabled until valid)
             Button(
+                enabled = isFormValid,
                 onClick = {
                     coroutineScope.launch {
                         RequestRepository.addRequest(
