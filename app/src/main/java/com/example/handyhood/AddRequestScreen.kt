@@ -1,9 +1,8 @@
 package com.example.handyhood.ui.screens
-import com.example.handyhood.data.RequestRepository
 
+import com.example.handyhood.data.RequestRepository
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -14,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.handyhood.ui.theme.LightBlueGradient
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,11 +27,18 @@ fun AddRequestScreen(navController: NavHostController) {
     var preferredDate by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    // Date picker with initial value so selectedDateMillis is never null
+    // ✅ Calendar state (past dates disabled)
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis()
+        initialSelectedDateMillis = System.currentTimeMillis(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis >= System.currentTimeMillis()
+            }
+        }
     )
+
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -63,7 +70,6 @@ fun AddRequestScreen(navController: NavHostController) {
                 ),
                 elevation = CardDefaults.elevatedCardElevation(4.dp)
             ) {
-
                 Column(
                     modifier = Modifier
                         .padding(20.dp)
@@ -71,7 +77,7 @@ fun AddRequestScreen(navController: NavHostController) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    // CATEGORY DROPDOWN
+                    // CATEGORY
                     Text("Service Category", fontWeight = FontWeight.SemiBold)
 
                     ExposedDropdownMenuBox(
@@ -128,7 +134,7 @@ fun AddRequestScreen(navController: NavHostController) {
                         maxLines = 5
                     )
 
-                    // DATE PICKER TEXTFIELD
+                    // ✅ PREFERRED DATE (calendar-based)
                     OutlinedTextField(
                         value = preferredDate,
                         onValueChange = {},
@@ -142,9 +148,6 @@ fun AddRequestScreen(navController: NavHostController) {
             }
 
             // SUBMIT BUTTON
-            // SUBMIT BUTTON
-            val coroutineScope = rememberCoroutineScope()
-
             Button(
                 onClick = {
                     coroutineScope.launch {
@@ -165,7 +168,6 @@ fun AddRequestScreen(navController: NavHostController) {
                 Text("Submit Request", fontWeight = FontWeight.SemiBold)
             }
 
-
             // ----- DATE PICKER DIALOG -----
             if (showDatePicker) {
                 DatePickerDialog(
@@ -174,7 +176,8 @@ fun AddRequestScreen(navController: NavHostController) {
                         TextButton(
                             onClick = {
                                 val millis =
-                                    datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                                    datePickerState.selectedDateMillis
+                                        ?: System.currentTimeMillis()
 
                                 preferredDate = SimpleDateFormat(
                                     "dd/MM/yyyy",
@@ -186,7 +189,9 @@ fun AddRequestScreen(navController: NavHostController) {
                         ) { Text("OK") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text("Cancel")
+                        }
                     }
                 ) {
                     DatePicker(state = datePickerState)
