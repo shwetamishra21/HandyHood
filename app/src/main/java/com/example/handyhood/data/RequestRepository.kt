@@ -31,7 +31,7 @@ object RequestRepository {
         )
     }
 
-    // ✅ Day 4.4 — fetch user requests (THIS WAS MISSING)
+    // ✅ Day 4.4 — fetch user requests
     suspend fun fetchRequests(): List<Map<String, Any?>> {
         val user = auth.currentUserOrNull()
             ?: throw IllegalStateException("User not logged in")
@@ -45,9 +45,26 @@ object RequestRepository {
             }
             .decodeList()
 
-        // Convert JsonObject → Map<String, Any?>
         return rows.map { json ->
             json.mapValues { it.value }
+        }
+    }
+
+    // ✅ Day 5.4 — update preferred date (NEW, minimal)
+    suspend fun updateRequestDate(
+        requestId: String,
+        newDate: String
+    ) {
+        val user = auth.currentUserOrNull()
+            ?: throw IllegalStateException("User not logged in")
+
+        db.from("requests").update(
+            mapOf("preferred_date" to newDate)
+        ) {
+            filter {
+                eq("id", requestId)
+                eq("user_id", user.id) // 🔒 RLS safety
+            }
         }
     }
 }

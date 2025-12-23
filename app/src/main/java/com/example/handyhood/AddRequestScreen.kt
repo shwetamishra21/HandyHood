@@ -28,7 +28,6 @@ fun AddRequestScreen(navController: NavHostController) {
     var preferredDate by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    // ✅ Calendar state (past dates disabled)
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = System.currentTimeMillis(),
@@ -41,7 +40,6 @@ fun AddRequestScreen(navController: NavHostController) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    // ✅ FORM VALIDATION (NEW)
     val isFormValid = category.isNotBlank()
             && title.isNotBlank()
             && description.isNotBlank()
@@ -69,7 +67,6 @@ fun AddRequestScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ----- FORM CARD -----
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(
@@ -85,7 +82,6 @@ fun AddRequestScreen(navController: NavHostController) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    // CATEGORY
                     Text("Service Category", fontWeight = FontWeight.SemiBold)
 
                     ExposedDropdownMenuBox(
@@ -123,7 +119,6 @@ fun AddRequestScreen(navController: NavHostController) {
                         }
                     }
 
-                    // TITLE
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
@@ -131,7 +126,6 @@ fun AddRequestScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // DESCRIPTION
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
@@ -142,7 +136,6 @@ fun AddRequestScreen(navController: NavHostController) {
                         maxLines = 5
                     )
 
-                    // PREFERRED DATE
                     OutlinedTextField(
                         value = preferredDate,
                         onValueChange = {},
@@ -161,7 +154,6 @@ fun AddRequestScreen(navController: NavHostController) {
                 }
             }
 
-            // ✅ SUBMIT BUTTON (disabled until valid)
             Button(
                 enabled = isFormValid,
                 onClick = {
@@ -183,7 +175,6 @@ fun AddRequestScreen(navController: NavHostController) {
                 Text("Submit Request", fontWeight = FontWeight.SemiBold)
             }
 
-            // ----- DATE PICKER DIALOG -----
             if (showDatePicker) {
                 DatePickerDialog(
                     onDismissRequest = { showDatePicker = false },
