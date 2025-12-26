@@ -5,11 +5,11 @@ import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.broadcastFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
-import io. github. jan. supabase. realtime. broadcastFlow
 
 object RequestRepository {
 
@@ -17,9 +17,7 @@ object RequestRepository {
     private val db = SupabaseClient.client.postgrest
     private val realtime = SupabaseClient.client.realtime
 
-    /* ------------------------------------------------------------------
-       EXISTING CRUD — UNCHANGED
-       ------------------------------------------------------------------ */
+    /* -------------------- CRUD -------------------- */
 
     suspend fun addRequest(
         category: String,
@@ -52,9 +50,7 @@ object RequestRepository {
             }
             .decodeList()
 
-        return rows.map { json ->
-            json.mapValues { it.value }
-        }
+        return rows.map { it.mapValues { v -> v.value } }
     }
 
     suspend fun updateRequestDate(
@@ -109,33 +105,21 @@ object RequestRepository {
         }
     }
 
-    /* ------------------------------------------------------------------
-       REALTIME — DEBUG LISTENER (SDK 2.5 SAFE)
-       ------------------------------------------------------------------ */
+    /* -------------------- REALTIME (Day 7.2) -------------------- */
 
-    fun startRealtimeDebugListener() {
+    fun startRequestsRealtime(onChange: () -> Unit) {
         val user = auth.currentUserOrNull() ?: return
 
-        val channel = realtime.channel("requests-debug-${user.id}")
+        val channel = realtime.channel("requests-${user.id}")
 
         CoroutineScope(Dispatchers.IO).launch {
             channel.subscribe()
 
-
             channel
                 .broadcastFlow<JsonObject>("*")
-                .collect { event ->
-                    println("🔥 REALTIME EVENT RECEIVED: $event")
+                .collect {
+                    onChange()
                 }
-        }
-    }
-
-    fun stopRealtimeDebugListener() {
-        val user = auth.currentUserOrNull() ?: return
-        val channel = realtime.channel("requests-debug-${user.id}")
-
-        CoroutineScope(Dispatchers.IO).launch {
-            realtime.removeChannel(channel)
         }
     }
 }

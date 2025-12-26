@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -12,8 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.handyhood.data.RequestRepository
-import com. example. handyhood. data. RequestsViewModel
+import com.example.handyhood.data.RequestsViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -24,243 +22,162 @@ fun RequestsScreen(
     navController: NavHostController,
     viewModel: RequestsViewModel = viewModel()
 ) {
-
     val requests by viewModel.requests.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val lastUpdated by viewModel.lastUpdated.collectAsState()
 
-    var isUpdating by remember { mutableStateOf(false) }
-    var selectedRequestId by remember { mutableStateOf<String?>(null) }
-
+    var selectedId by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    var showEditDialog by remember { mutableStateOf(false) }
-    var editTitle by remember { mutableStateOf("") }
-    var editDescription by remember { mutableStateOf("") }
-
-    var showCancelDialog by remember { mutableStateOf(false) }
-
+    // ✅ Snackbar state (7.3.4)
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Service Requests") },
+                title = { Text("My Requests") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, null)
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) } // ✅ attach snackbar
     ) { padding ->
 
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
         ) {
 
-            when {
-                error != null -> {
-                    Text(
-                        text = error!!,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+            // Realtime refresh indicator (7.3.1)
+            if (isRefreshing) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
 
-                requests.isEmpty() -> {
-                    Text("No requests found.")
-                }
+            // Last updated timestamp (7.3.3)
+            if (lastUpdated != null) {
+                Text(
+                    text = "Last updated: ${formatRelativeTime(lastUpdated!!)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, bottom = 6.dp)
+                )
+            }
 
-                else -> {
-                    requests
-                        .filter { it["is_cancelled"] != true }
-                        .forEach { req ->
+            Column(modifier = Modifier.padding(16.dp)) {
+                when {
+                    error != null -> {
+                        Text(error!!, color = MaterialTheme.colorScheme.error)
+                    }
 
+                    requests.isEmpty() -> {
+                        Text("No requests found")
+                    }
+
+                    else -> {
+                        requests.forEach { req ->
                             ElevatedCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            req["title"].toString(),
-                                            fontWeight = FontWeight.Bold
-                                        )
-
-                                        if (req["status"] != "completed") {
-                                            IconButton(onClick = {
-                                                selectedRequestId = req["id"].toString()
-                                                editTitle = req["title"].toString()
-                                                editDescription = req["description"].toString()
-                                                showEditDialog = true
-                                            }) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(6.dp))
+                                Column(Modifier.padding(16.dp)) {
+                                    Text(
+                                        req["title"].toString(),
+                                        fontWeight = FontWeight.Bold
+                                    )
                                     Text("Category: ${req["category"]}")
 
-                                    Spacer(Modifier.height(6.dp))
                                     Text(
-                                        text = "Preferred Date: ${req["preferred_date"]}",
-                                        modifier = Modifier.clickable(
-                                            enabled = req["status"] != "completed" && !isUpdating
-                                        ) {
-                                            selectedRequestId = req["id"].toString()
+                                        "Preferred Date: ${req["preferred_date"]}",
+                                        modifier = Modifier.clickable {
+                                            selectedId = req["id"].toString()
                                             showDatePicker = true
                                         }
                                     )
 
-                                    Spacer(Modifier.height(10.dp))
+                                    Spacer(Modifier.height(8.dp))
                                     Text(req["description"].toString())
 
-                                    if (req["status"] != "completed") {
-                                        Spacer(Modifier.height(12.dp))
-                                        TextButton(
-                                            onClick = {
-                                                selectedRequestId = req["id"].toString()
-                                                showCancelDialog = true
-                                            },
-                                            colors = ButtonDefaults.textButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Text("Cancel Request")
-                                        }
+                                    Spacer(Modifier.height(8.dp))
+
+                                    // ✅ Cancel action with snackbar
+                                    TextButton(
+                                        onClick = {
+                                            val id = req["id"].toString()
+                                            viewModel.cancel(id)
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Request cancelled",
+                                                    withDismissAction = true
+                                                )
+                                            }
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Text("Cancel request")
                                     }
                                 }
                             }
                         }
+                    }
                 }
             }
         }
     }
 
-    /* ---------- Date Picker ---------- */
-    if (showDatePicker && selectedRequestId != null) {
+    // Date picker → update date + snackbar
+    if (showDatePicker && selectedId != null) {
         DatePickerDialog(
-            onDismissRequest = {
-                showDatePicker = false
-                selectedRequestId = null
-            },
+            onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    val millis =
-                        datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-
-                    val newDate = SimpleDateFormat(
+                    val millis = datePickerState.selectedDateMillis!!
+                    val date = SimpleDateFormat(
                         "dd/MM/yyyy",
                         Locale.getDefault()
                     ).format(Date(millis))
 
+                    viewModel.updateDate(selectedId!!, date)
+
                     scope.launch {
-                        isUpdating = true
-                        RequestRepository.updateRequestDate(
-                            selectedRequestId!!,
-                            newDate
+                        snackbarHostState.showSnackbar(
+                            message = "Preferred date updated",
+                            withDismissAction = true
                         )
-                        isUpdating = false
                     }
 
                     showDatePicker = false
-                    selectedRequestId = null
                 }) {
                     Text("Update")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDatePicker = false
-                    selectedRequestId = null
-                }) {
-                    Text("Cancel")
                 }
             }
         ) {
             DatePicker(state = datePickerState)
         }
     }
+}
 
-    /* ---------- Edit Dialog ---------- */
-    if (showEditDialog && selectedRequestId != null) {
-        AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = { Text("Edit Request") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = editTitle,
-                        onValueChange = { editTitle = it },
-                        label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = editDescription,
-                        onValueChange = { editDescription = it },
-                        label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    scope.launch {
-                        RequestRepository.updateRequestDetails(
-                            selectedRequestId!!,
-                            editTitle,
-                            editDescription
-                        )
-                    }
-                    showEditDialog = false
-                }) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+/* ---------- Helper for relative time (7.3.3) ---------- */
+private fun formatRelativeTime(ts: Long): String {
+    val diff = System.currentTimeMillis() - ts
+    val sec = diff / 1000
+    val min = sec / 60
+    val hr = min / 60
 
-    /* ---------- Cancel Dialog ---------- */
-    if (showCancelDialog && selectedRequestId != null) {
-        AlertDialog(
-            onDismissRequest = { showCancelDialog = false },
-            title = { Text("Cancel Request?") },
-            text = { Text("This action cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            RequestRepository.cancelRequest(selectedRequestId!!)
-                        }
-                        showCancelDialog = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Yes, Cancel")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) {
-                    Text("No")
-                }
-            }
-        )
+    return when {
+        sec < 10 -> "just now"
+        sec < 60 -> "$sec sec ago"
+        min < 60 -> "$min min ago"
+        hr < 24 -> "$hr hr ago"
+        else -> "a while ago"
     }
 }
