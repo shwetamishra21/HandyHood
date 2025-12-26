@@ -10,37 +10,37 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.handyhood.data.RequestRepository
+import com. example. handyhood. data. RequestsViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RequestsScreen(navController: NavHostController) {
+fun RequestsScreen(
+    navController: NavHostController,
+    viewModel: RequestsViewModel = viewModel()
+) {
 
-    var requests by remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val requests by viewModel.requests.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    // 🔒 Day 5.5 state
-    var showDatePicker by remember { mutableStateOf(false) }
-    var selectedRequestId by remember { mutableStateOf<String?>(null) }
     var isUpdating by remember { mutableStateOf(false) }
+    var selectedRequestId by remember { mutableStateOf<String?>(null) }
 
-    val scope = rememberCoroutineScope()
+    var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    LaunchedEffect(Unit) {
-        try {
-            requests = RequestRepository.fetchRequests()
-        } catch (e: Exception) {
-            error = e.message ?: "Failed to load requests"
-        } finally {
-            isLoading = false
-        }
-    }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editTitle by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
+
+    var showCancelDialog by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -63,10 +63,6 @@ fun RequestsScreen(navController: NavHostController) {
         ) {
 
             when {
-                isLoading -> {
-                    CircularProgressIndicator()
-                }
-
                 error != null -> {
                     Text(
                         text = error!!,
@@ -79,61 +75,78 @@ fun RequestsScreen(navController: NavHostController) {
                 }
 
                 else -> {
-                    requests.forEach { req ->
-                        ElevatedCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                    requests
+                        .filter { it["is_cancelled"] != true }
+                        .forEach { req ->
 
-                                Text(
-                                    req["title"].toString(),
-                                    fontWeight = FontWeight.Bold
-                                )
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
 
-                                Spacer(Modifier.height(6.dp))
-                                Text("Category: ${req["category"]}")
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            req["title"].toString(),
+                                            fontWeight = FontWeight.Bold
+                                        )
 
-                                Spacer(Modifier.height(6.dp))
+                                        if (req["status"] != "completed") {
+                                            IconButton(onClick = {
+                                                selectedRequestId = req["id"].toString()
+                                                editTitle = req["title"].toString()
+                                                editDescription = req["description"].toString()
+                                                showEditDialog = true
+                                            }) {
+                                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                            }
+                                        }
+                                    }
 
-                                // ✅ Day 5.5 — Hardened editable preferred date
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text("Category: ${req["category"]}")
+
+                                    Spacer(Modifier.height(6.dp))
                                     Text(
                                         text = "Preferred Date: ${req["preferred_date"]}",
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clickable(
-                                                enabled = req["status"] != "completed" && !isUpdating
-                                            ) {
-                                                selectedRequestId = req["id"].toString()
-                                                showDatePicker = true
-                                            }
+                                        modifier = Modifier.clickable(
+                                            enabled = req["status"] != "completed" && !isUpdating
+                                        ) {
+                                            selectedRequestId = req["id"].toString()
+                                            showDatePicker = true
+                                        }
                                     )
 
+                                    Spacer(Modifier.height(10.dp))
+                                    Text(req["description"].toString())
+
                                     if (req["status"] != "completed") {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit date",
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
+                                        Spacer(Modifier.height(12.dp))
+                                        TextButton(
+                                            onClick = {
+                                                selectedRequestId = req["id"].toString()
+                                                showCancelDialog = true
+                                            },
+                                            colors = ButtonDefaults.textButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error
+                                            )
+                                        ) {
+                                            Text("Cancel Request")
+                                        }
                                     }
                                 }
-
-                                Spacer(Modifier.height(10.dp))
-                                Text(req["description"].toString())
                             }
                         }
-                    }
                 }
             }
         }
     }
 
-    // ✅ Day 5.5 — Date picker with double-submit protection
+    /* ---------- Date Picker ---------- */
     if (showDatePicker && selectedRequestId != null) {
         DatePickerDialog(
             onDismissRequest = {
@@ -141,39 +154,113 @@ fun RequestsScreen(navController: NavHostController) {
                 selectedRequestId = null
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        val millis =
-                            datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                TextButton(onClick = {
+                    val millis =
+                        datePickerState.selectedDateMillis ?: System.currentTimeMillis()
 
-                        val newDate = SimpleDateFormat(
-                            "dd/MM/yyyy",
-                            Locale.getDefault()
-                        ).format(Date(millis))
+                    val newDate = SimpleDateFormat(
+                        "dd/MM/yyyy",
+                        Locale.getDefault()
+                    ).format(Date(millis))
 
-                        scope.launch {
-                            isUpdating = true
-                            RequestRepository.updateRequestDate(
-                                requestId = selectedRequestId!!,
-                                newDate = newDate
-                            )
-                            requests = RequestRepository.fetchRequests()
-                            isUpdating = false
-                        }
-
-                        showDatePicker = false
-                        selectedRequestId = null
+                    scope.launch {
+                        isUpdating = true
+                        RequestRepository.updateRequestDate(
+                            selectedRequestId!!,
+                            newDate
+                        )
+                        isUpdating = false
                     }
-                ) { Text("Update") }
+
+                    showDatePicker = false
+                    selectedRequestId = null
+                }) {
+                    Text("Update")
+                }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showDatePicker = false
                     selectedRequestId = null
-                }) { Text("Cancel") }
+                }) {
+                    Text("Cancel")
+                }
             }
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    /* ---------- Edit Dialog ---------- */
+    if (showEditDialog && selectedRequestId != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Request") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text("Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = editDescription,
+                        onValueChange = { editDescription = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        RequestRepository.updateRequestDetails(
+                            selectedRequestId!!,
+                            editTitle,
+                            editDescription
+                        )
+                    }
+                    showEditDialog = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    /* ---------- Cancel Dialog ---------- */
+    if (showCancelDialog && selectedRequestId != null) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancel Request?") },
+            text = { Text("This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            RequestRepository.cancelRequest(selectedRequestId!!)
+                        }
+                        showCancelDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Yes, Cancel")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
