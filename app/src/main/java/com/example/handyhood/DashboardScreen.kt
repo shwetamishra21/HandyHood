@@ -1,6 +1,7 @@
 package com.example.handyhood.ui.screens
 
 import androidx.compose.foundation.background
+import com. example. handyhood. data. ActivityViewModel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,10 +12,12 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.handyhood.data.Post
@@ -26,36 +29,37 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-navController: NavHostController,
-userEmail: String
+    navController: NavHostController,
+    userEmail: String
 ) {
-
-
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Fetch when screen loads
+    val activityViewModel: ActivityViewModel = viewModel()
+    val hasUnread by activityViewModel.hasUnread.collectAsState()
+
+
+    // Initial fetch
     LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                posts = PostsRepository.fetchPosts()
-            } catch (e: Exception) {
-                errorMessage = "Failed to load posts. Please try again."
-            } finally {
-                isLoading = false
-            }
+        try {
+            posts = PostsRepository.fetchPosts()
+        } catch (e: Exception) {
+            errorMessage = "Failed to load posts. Please try again."
+        } finally {
+            isLoading = false
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("add_request") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                onClick = { navController.navigate("add_request") }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Request")
             }
@@ -77,16 +81,9 @@ userEmail: String
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
 
-                // ------------------------------------------------------------
                 // HEADER
-                // ------------------------------------------------------------
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
-                        )
-                    ) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
                                 text = "HandyHood",
@@ -101,80 +98,60 @@ userEmail: String
                     }
                 }
 
-                // ------------------------------------------------------------
-                // WELCOME CARD
-                // ------------------------------------------------------------
+                // WELCOME
                 item {
-                    ElevatedCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                        )
-                    ) {
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Welcome, $userEmail \uD83D\uDC4B",
+                                text = "Welcome, $userEmail 👋",
                                 style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Connect with neighbors & build your community.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text("Connect with neighbors & build your community.")
                         }
                     }
                 }
 
-                // ------------------------------------------------------------
                 // QUICK ACTIONS
-                // ------------------------------------------------------------
                 item {
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    ElevatedCard {
                         Column(modifier = Modifier.padding(16.dp)) {
-
                             Text(
                                 text = "Quick Actions",
-                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
+                            Spacer(Modifier.height(12.dp))
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-
-                                // Refresh Button
                                 FilledTonalButton(
+                                    modifier = Modifier.weight(1f),
                                     onClick = {
                                         coroutineScope.launch {
                                             isLoading = true
                                             try {
                                                 posts = PostsRepository.fetchPosts()
+                                                snackbarHostState.showSnackbar("Feed refreshed")
                                             } catch (e: Exception) {
-                                                errorMessage = "Could not refresh posts"
+                                                snackbarHostState.showSnackbar("Refresh failed")
                                             } finally {
                                                 isLoading = false
                                             }
                                         }
-                                    },
-                                    modifier = Modifier.weight(1f)
+                                    }
                                 ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null)
-                                    Spacer(Modifier.width(4.dp))
+                                    Icon(Icons.Default.Refresh, null)
+                                    Spacer(Modifier.width(6.dp))
                                     Text("Refresh")
                                 }
 
-                                // Add Request Button (WORKING)
                                 FilledTonalButton(
-                                    onClick = { navController.navigate("add_request") },
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { navController.navigate("add_request") }
                                 ) {
-                                    Icon(Icons.Default.Add, contentDescription = null)
-                                    Spacer(Modifier.width(4.dp))
+                                    Icon(Icons.Default.Add, null)
+                                    Spacer(Modifier.width(6.dp))
                                     Text("Add Request")
                                 }
                             }
@@ -182,41 +159,27 @@ userEmail: String
                     }
                 }
 
-                // ------------------------------------------------------------
-                // MY REQUESTS CARD
-                // ------------------------------------------------------------
+                // MY REQUESTS
                 item {
                     ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { navController.navigate("requests") },
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
+                            .clickable { navController.navigate("requests") }
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text(
-                                    text = "My Requests",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Track your service requests",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                Text("My Requests", fontWeight = FontWeight.Bold)
+                                Text("Track your service requests")
                             }
-                            Icon(Icons.Default.List, contentDescription = null)
+                            Icon(Icons.Default.List, null)
                         }
                     }
                 }
 
-                // ------------------------------------------------------------
-                // POSTS LIST OR EMPTY / ERROR / LOADING
-                // ------------------------------------------------------------
+                // POSTS
                 when {
                     isLoading -> {
                         item {
@@ -224,7 +187,7 @@ userEmail: String
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(32.dp),
-                                contentAlignment = androidx.compose.ui.Alignment.Center
+                                contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator()
                             }
@@ -234,7 +197,7 @@ userEmail: String
                     errorMessage != null -> {
                         item {
                             Text(
-                                text = errorMessage ?: "",
+                                text = errorMessage!!,
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -242,36 +205,19 @@ userEmail: String
 
                     posts.isEmpty() -> {
                         item {
-                            Text(
-                                text = "No community posts yet.",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("No community posts yet.")
                         }
                     }
 
                     else -> {
                         items(posts) { post ->
-                            ElevatedCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.elevatedCardElevation(2.dp),
-                            ) {
+                            ElevatedCard {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = post.author,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    Text(post.author, fontWeight = FontWeight.Bold)
                                     Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = post.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Text(post.title)
                                     Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        text = post.content,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Text(post.content)
                                 }
                             }
                         }
