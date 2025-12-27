@@ -107,12 +107,55 @@ object RequestRepository {
         }
     }
 
+    suspend fun acceptRequest(requestId: String) {
+        val user = auth.currentUserOrNull()
+            ?: throw IllegalStateException("Not authenticated")
+
+        db.from("requests").update(
+            mapOf(
+                "status" to "accepted",
+                "provider_id" to user.id
+            )
+        ) {
+            filter { eq("id", requestId) }
+        }
+    }
+
+    suspend fun completeRequest(requestId: String) {
+        val user = auth.currentUserOrNull()
+            ?: throw IllegalStateException("Not authenticated")
+
+        db.from("requests").update(
+            mapOf("status" to "completed")
+        ) {
+            filter { eq("id", requestId) }
+        }
+    }
+
+    suspend fun fetchPendingRequestsForProvider(): List<Map<String, Any?>> {
+        val user = auth.currentUserOrNull()
+            ?: throw IllegalStateException("Not authenticated")
+
+        val rows: List<JsonObject> = db
+            .from("requests")
+            .select {
+                filter { eq("status", "pending") }
+            }
+            .decodeList()
+
+        return rows.map { it.mapValues { v -> v.value } }
+    }
+
+
+
+
+
     /* -------------------- REALTIME (Day 7.2) -------------------- */
 
     fun startRequestsRealtime(onChange: () -> Unit) {
         val user = auth.currentUserOrNull() ?: return
 
-        val channel = realtime.channel("requests-${user.id}")
+        val channel = realtime.channel("requests-global")
 
         CoroutineScope(Dispatchers.IO).launch {
             channel.subscribe()

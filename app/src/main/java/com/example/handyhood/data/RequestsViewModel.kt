@@ -18,16 +18,21 @@ class RequestsViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
-    // ✅ Day 8.4 — last successful refresh timestamp
+    // Day 8.4 — last successful refresh timestamp
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated
+
+    // ✅ Prevent duplicate realtime subscriptions
+    private var realtimeStarted = false
 
     init {
         refresh()
 
-        // ✅ Realtime hook (already compiled in your repo)
-        RequestRepository.startRequestsRealtime {
-            refresh()
+        if (!realtimeStarted) {
+            realtimeStarted = true
+            RequestRepository.startRequestsRealtime {
+                refresh()
+            }
         }
     }
 
@@ -67,5 +72,11 @@ class RequestsViewModel : ViewModel() {
             RequestRepository.cancelRequest(id)
             refresh()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Realtime cleanup handled inside repository if needed later
+        realtimeStarted = false
     }
 }
