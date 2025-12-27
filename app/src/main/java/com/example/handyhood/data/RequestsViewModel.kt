@@ -18,12 +18,14 @@ class RequestsViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
-    // ✅ NEW — last updated timestamp (epoch millis)
+    // ✅ Day 8.4 — last successful refresh timestamp
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated
 
     init {
         refresh()
+
+        // ✅ Realtime hook (already compiled in your repo)
         RequestRepository.startRequestsRealtime {
             refresh()
         }
@@ -37,7 +39,7 @@ class RequestsViewModel : ViewModel() {
             try {
                 _requests.value = RequestRepository.fetchRequests()
                 _error.value = null
-                _lastUpdated.value = System.currentTimeMillis() // ✅ set on success
+                _lastUpdated.value = System.currentTimeMillis()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load requests"
             } finally {

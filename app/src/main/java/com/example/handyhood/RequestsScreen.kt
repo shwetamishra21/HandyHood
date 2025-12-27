@@ -31,7 +31,6 @@ fun RequestsScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // ✅ Snackbar state (7.3.4)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -46,7 +45,7 @@ fun RequestsScreen(
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) } // ✅ attach snackbar
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
 
         Column(
@@ -55,18 +54,16 @@ fun RequestsScreen(
                 .fillMaxSize()
         ) {
 
-            // Realtime refresh indicator (7.3.1)
             if (isRefreshing) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
-            // Last updated timestamp (7.3.3)
             if (lastUpdated != null) {
                 Text(
                     text = "Last updated: ${formatRelativeTime(lastUpdated!!)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, bottom = 6.dp)
+                    modifier = Modifier.padding(16.dp)
                 )
             }
 
@@ -95,7 +92,7 @@ fun RequestsScreen(
                                     Text("Category: ${req["category"]}")
 
                                     Text(
-                                        "Preferred Date: ${req["preferred_date"]}",
+                                        text = "Preferred Date: ${req["preferred_date"]}",
                                         modifier = Modifier.clickable {
                                             selectedId = req["id"].toString()
                                             showDatePicker = true
@@ -105,16 +102,12 @@ fun RequestsScreen(
                                     Spacer(Modifier.height(8.dp))
                                     Text(req["description"].toString())
 
-                                    Spacer(Modifier.height(8.dp))
-
-                                    // ✅ Cancel action with snackbar
                                     TextButton(
                                         onClick = {
-                                            val id = req["id"].toString()
-                                            viewModel.cancel(id)
+                                            viewModel.cancel(req["id"].toString())
                                             scope.launch {
                                                 snackbarHostState.showSnackbar(
-                                                    message = "Request cancelled",
+                                                    "Request cancelled",
                                                     withDismissAction = true
                                                 )
                                             }
@@ -134,7 +127,6 @@ fun RequestsScreen(
         }
     }
 
-    // Date picker → update date + snackbar
     if (showDatePicker && selectedId != null) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -150,7 +142,7 @@ fun RequestsScreen(
 
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            message = "Preferred date updated",
+                            "Preferred date updated",
                             withDismissAction = true
                         )
                     }
@@ -166,7 +158,7 @@ fun RequestsScreen(
     }
 }
 
-/* ---------- Helper for relative time (7.3.3) ---------- */
+/* -------- relative time helper -------- */
 private fun formatRelativeTime(ts: Long): String {
     val diff = System.currentTimeMillis() - ts
     val sec = diff / 1000

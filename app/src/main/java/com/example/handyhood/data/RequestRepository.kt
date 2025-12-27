@@ -34,10 +34,12 @@ object RequestRepository {
                 "category" to category,
                 "title" to title,
                 "description" to description,
-                "preferred_date" to preferredDate
+                "preferred_date" to preferredDate,
+                "status" to "pending" // ✅ Day 8.1
             )
         )
     }
+
 
     suspend fun fetchRequests(): List<Map<String, Any?>> {
         val user = auth.currentUserOrNull()
