@@ -172,6 +172,20 @@ object RequestRepository {
         }
     }
 
+    suspend fun isCurrentUserAdmin(): Boolean {
+        val user = auth.currentUserOrNull() ?: return false
+
+        val rows = db
+            .from("users")
+            .select {
+                filter { eq("id", user.id) }
+            }
+            .decodeList<Map<String, Any?>>()
+
+        return rows.firstOrNull()?.get("role") == "admin"
+    }
+
+
     fun stopRequestsRealtime() {
         requestsChannel?.let { channel ->
             CoroutineScope(Dispatchers.IO).launch {
@@ -180,5 +194,19 @@ object RequestRepository {
             requestsChannel = null
         }
     }
+    suspend fun adminCancelRequest(requestId: String) {
+        db.from("requests")
+            .update(mapOf("is_cancelled" to true)) {
+                filter { eq("id", requestId) }
+            }
+    }
+
+    suspend fun adminCompleteRequest(requestId: String) {
+        db.from("requests")
+            .update(mapOf("status" to "completed")) {
+                filter { eq("id", requestId) }
+            }
+    }
+
 
 }

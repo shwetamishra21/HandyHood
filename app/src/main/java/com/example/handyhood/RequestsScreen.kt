@@ -22,17 +22,18 @@ fun RequestsScreen(
     navController: NavHostController,
     viewModel: RequestsViewModel = viewModel()
 ) {
+    /* ---------- State from ViewModel ---------- */
     val requests by viewModel.requests.collectAsState()
     val error by viewModel.error.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
     val isMutating by viewModel.isMutating.collectAsState()
 
+    /* ---------- UI State ---------- */
     var selectedId by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // ✅ Edit UI state
     var showEditDialog by remember { mutableStateOf(false) }
     var editTitle by remember { mutableStateOf("") }
     var editDescription by remember { mutableStateOf("") }
@@ -40,6 +41,7 @@ fun RequestsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    /* ---------- Scaffold ---------- */
     Scaffold(
         topBar = {
             TopAppBar(
@@ -97,10 +99,11 @@ fun RequestsScreen(
                                         req["title"].toString(),
                                         fontWeight = FontWeight.Bold
                                     )
+
                                     Text("Category: ${req["category"]}")
 
                                     Text(
-                                        text = "Preferred Date: ${req["preferred_date"]}",
+                                        "Preferred Date: ${req["preferred_date"]}",
                                         modifier = Modifier.clickable {
                                             selectedId = requestId
                                             showDatePicker = true
@@ -154,14 +157,13 @@ fun RequestsScreen(
         }
     }
 
-    /* ---------------- Date Picker ---------------- */
-
+    /* ---------- Date Picker ---------- */
     if (showDatePicker && selectedId != null) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    val millis = datePickerState.selectedDateMillis!!
+                    val millis = datePickerState.selectedDateMillis ?: return@TextButton
                     val date = SimpleDateFormat(
                         "dd/MM/yyyy",
                         Locale.getDefault()
@@ -170,10 +172,7 @@ fun RequestsScreen(
                     viewModel.updateDate(selectedId!!, date)
 
                     scope.launch {
-                        snackbarHostState.showSnackbar(
-                            "Preferred date updated",
-                            withDismissAction = true
-                        )
+                        snackbarHostState.showSnackbar("Preferred date updated")
                     }
 
                     showDatePicker = false
@@ -186,8 +185,7 @@ fun RequestsScreen(
         }
     }
 
-    /* ---------------- Edit Dialog ---------------- */
-
+    /* ---------- Edit Dialog ---------- */
     if (showEditDialog && selectedId != null) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -233,7 +231,7 @@ fun RequestsScreen(
     }
 }
 
-/* -------- relative time helper -------- */
+/* ---------- Time helper ---------- */
 private fun formatRelativeTime(ts: Long): String {
     val diff = System.currentTimeMillis() - ts
     val sec = diff / 1000

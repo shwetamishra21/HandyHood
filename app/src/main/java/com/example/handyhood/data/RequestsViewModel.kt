@@ -132,6 +132,20 @@ class RequestsViewModel : ViewModel() {
             _isMutating.value = false
         }
     }
+    fun forceCancel(id: String) {
+        viewModelScope.launch {
+            RequestRepository.adminCancelRequest(id)
+            refresh()
+        }
+    }
+
+    fun forceComplete(id: String) {
+        viewModelScope.launch {
+            RequestRepository.adminCompleteRequest(id)
+            refresh()
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()
