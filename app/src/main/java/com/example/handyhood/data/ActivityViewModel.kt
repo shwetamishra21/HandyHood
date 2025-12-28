@@ -29,9 +29,11 @@ class ActivityViewModel : ViewModel() {
                 _activities.value = list
                 _hasUnread.value = list.any { it["is_read"] == false }
             } catch (_: Exception) {
+                // Silent fail — activity feed is non-critical
             }
         }
     }
+
 
     fun markAllRead() {
         viewModelScope.launch {
@@ -39,4 +41,9 @@ class ActivityViewModel : ViewModel() {
             refresh()
         }
     }
+    override fun onCleared() {
+        super.onCleared()
+        RequestRepository.stopRequestsRealtime()
+    }
+
 }

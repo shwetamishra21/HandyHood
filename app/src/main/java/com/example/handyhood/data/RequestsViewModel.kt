@@ -18,65 +18,123 @@ class RequestsViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
-    // Day 8.4 — last successful refresh timestamp
+    // ✅ Day 8.4
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated
 
-    // ✅ Prevent duplicate realtime subscriptions
-    private var realtimeStarted = false
+    // ✅ Day 11.4.1 — MUTATION GUARD
+    private val _isMutating = MutableStateFlow(false)
+    val isMutating: StateFlow<Boolean> = _isMutating
 
     init {
         refresh()
-
-        if (!realtimeStarted) {
-            realtimeStarted = true
-            RequestRepository.startRequestsRealtime {
-                refresh()
-            }
+        RequestRepository.startRequestsRealtime {
+            refresh()
         }
     }
+
+    /* -------------------- SAFE CALL HELPER -------------------- */
+
+    private suspend fun <T> safeCall(
+        block: suspend () -> T
+    ): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /* -------------------- REFRESH -------------------- */
 
     fun refresh() {
         if (_isRefreshing.value) return
 
         viewModelScope.launch {
             _isRefreshing.value = true
-            try {
-                _requests.value = RequestRepository.fetchRequests()
-                _error.value = null
-                _lastUpdated.value = System.currentTimeMillis()
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load requests"
-            } finally {
-                _isRefreshing.value = false
+
+            val result = safeCall {
+                RequestRepository.fetchRequests()
             }
+
+            result
+                .onSuccess {
+                    _requests.value = it
+                    _error.value = null
+                    _lastUpdated.value = System.currentTimeMillis()
+                }
+                .onFailure {
+                    _error.value = "Unable to refresh. Check connection."
+                }
+
+            _isRefreshing.value = false
         }
     }
 
+    /* -------------------- MUTATIONS (GUARDED) -------------------- */
+
     fun updateDate(id: String, date: String) {
+        if (_isMutating.value) return
+
         viewModelScope.launch {
-            RequestRepository.updateRequestDate(id, date)
-            refresh()
+            _isMutating.value = true
+
+            val result = safeCall {
+                RequestRepository.updateRequestDate(id, date)
+            }
+
+            result
+                .onSuccess { refresh() }
+                .onFailure {
+                    _error.value = "Failed to update date."
+                }
+
+            _isMutating.value = false
         }
     }
 
     fun updateDetails(id: String, title: String, description: String) {
+        if (_isMutating.value) return
+
         viewModelScope.launch {
-            RequestRepository.updateRequestDetails(id, title, description)
-            refresh()
+            _isMutating.value = true
+
+            val result = safeCall {
+                RequestRepository.updateRequestDetails(id, title, description)
+            }
+
+            result
+                .onSuccess { refresh() }
+                .onFailure {
+                    _error.value = "Failed to update request details."
+                }
+
+            _isMutating.value = false
         }
     }
 
     fun cancel(id: String) {
+        if (_isMutating.value) return
+
         viewModelScope.launch {
-            RequestRepository.cancelRequest(id)
-            refresh()
+            _isMutating.value = true
+
+            val result = safeCall {
+                RequestRepository.cancelRequest(id)
+            }
+
+            result
+                .onSuccess { refresh() }
+                .onFailure {
+                    _error.value = "Failed to cancel request."
+                }
+
+            _isMutating.value = false
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Realtime cleanup handled inside repository if needed later
-        realtimeStarted = false
+        RequestRepository.stopRequestsRealtime()
     }
 }

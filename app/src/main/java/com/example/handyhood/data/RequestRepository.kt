@@ -152,19 +152,33 @@ object RequestRepository {
 
     /* -------------------- REALTIME (Day 7.2) -------------------- */
 
+
+    private var requestsChannel: io.github.jan.supabase.realtime.RealtimeChannel? = null
+
     fun startRequestsRealtime(onChange: () -> Unit) {
+        if (requestsChannel != null) return // ✅ prevent duplicates
+
         val user = auth.currentUserOrNull() ?: return
 
         val channel = realtime.channel("requests-global")
+        requestsChannel = channel
 
         CoroutineScope(Dispatchers.IO).launch {
             channel.subscribe()
 
-            channel
-                .broadcastFlow<JsonObject>("*")
-                .collect {
-                    onChange()
-                }
+            channel.broadcastFlow<Any>("*").collect {
+                onChange()
+            }
         }
     }
+
+    fun stopRequestsRealtime() {
+        requestsChannel?.let { channel ->
+            CoroutineScope(Dispatchers.IO).launch {
+                realtime.removeChannel(channel)
+            }
+            requestsChannel = null
+        }
+    }
+
 }

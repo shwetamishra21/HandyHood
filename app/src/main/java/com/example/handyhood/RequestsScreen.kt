@@ -26,10 +26,16 @@ fun RequestsScreen(
     val error by viewModel.error.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
+    val isMutating by viewModel.isMutating.collectAsState()
 
     var selectedId by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
+
+    // ✅ Edit UI state
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editTitle by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -79,6 +85,8 @@ fun RequestsScreen(
 
                     else -> {
                         requests.forEach { req ->
+                            val requestId = req["id"].toString()
+
                             ElevatedCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -94,7 +102,7 @@ fun RequestsScreen(
                                     Text(
                                         text = "Preferred Date: ${req["preferred_date"]}",
                                         modifier = Modifier.clickable {
-                                            selectedId = req["id"].toString()
+                                            selectedId = requestId
                                             showDatePicker = true
                                         }
                                     )
@@ -102,21 +110,40 @@ fun RequestsScreen(
                                     Spacer(Modifier.height(8.dp))
                                     Text(req["description"].toString())
 
-                                    TextButton(
-                                        onClick = {
-                                            viewModel.cancel(req["id"].toString())
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                    "Request cancelled",
-                                                    withDismissAction = true
-                                                )
+                                    Spacer(Modifier.height(12.dp))
+
+                                    Row {
+                                        TextButton(
+                                            enabled = !isMutating,
+                                            onClick = {
+                                                selectedId = requestId
+                                                editTitle = req["title"].toString()
+                                                editDescription = req["description"].toString()
+                                                showEditDialog = true
                                             }
-                                        },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            contentColor = MaterialTheme.colorScheme.error
-                                        )
-                                    ) {
-                                        Text("Cancel request")
+                                        ) {
+                                            Text("Edit")
+                                        }
+
+                                        Spacer(Modifier.width(8.dp))
+
+                                        TextButton(
+                                            enabled = !isMutating,
+                                            onClick = {
+                                                viewModel.cancel(requestId)
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        "Request cancelled",
+                                                        withDismissAction = true
+                                                    )
+                                                }
+                                            },
+                                            colors = ButtonDefaults.textButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error
+                                            )
+                                        ) {
+                                            Text("Cancel")
+                                        }
                                     }
                                 }
                             }
@@ -126,6 +153,8 @@ fun RequestsScreen(
             }
         }
     }
+
+    /* ---------------- Date Picker ---------------- */
 
     if (showDatePicker && selectedId != null) {
         DatePickerDialog(
@@ -155,6 +184,52 @@ fun RequestsScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    /* ---------------- Edit Dialog ---------------- */
+
+    if (showEditDialog && selectedId != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit request") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text("Title") }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editDescription,
+                        onValueChange = { editDescription = it },
+                        label = { Text("Description") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.updateDetails(
+                        selectedId!!,
+                        editTitle,
+                        editDescription
+                    )
+
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Request updated")
+                    }
+
+                    showEditDialog = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
