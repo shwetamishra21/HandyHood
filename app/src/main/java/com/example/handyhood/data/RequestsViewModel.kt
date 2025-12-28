@@ -25,8 +25,21 @@ class RequestsViewModel : ViewModel() {
     // ✅ Day 11.4.1 — MUTATION GUARD
     private val _isMutating = MutableStateFlow(false)
     val isMutating: StateFlow<Boolean> = _isMutating
+    private val _isAdmin = MutableStateFlow(false)
+    val isAdmin: StateFlow<Boolean> = _isAdmin
+
 
     init {
+            refresh()
+
+            viewModelScope.launch {
+                _isAdmin.value = RequestRepository.isCurrentUserAdmin()
+            }
+
+            RequestRepository.startRequestsRealtime {
+                refresh()
+            }
+
         refresh()
         RequestRepository.startRequestsRealtime {
             refresh()
@@ -151,4 +164,7 @@ class RequestsViewModel : ViewModel() {
         super.onCleared()
         RequestRepository.stopRequestsRealtime()
     }
+
+
+
 }

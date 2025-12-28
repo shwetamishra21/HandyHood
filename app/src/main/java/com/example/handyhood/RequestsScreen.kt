@@ -28,6 +28,7 @@ fun RequestsScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
     val isMutating by viewModel.isMutating.collectAsState()
+    val isAdmin by viewModel.isAdmin.collectAsState()
 
     /* ---------- UI State ---------- */
     var selectedId by remember { mutableStateOf<String?>(null) }
@@ -48,7 +49,7 @@ fun RequestsScreen(
                 title = { Text("My Requests") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -95,15 +96,16 @@ fun RequestsScreen(
                                     .padding(vertical = 8.dp)
                             ) {
                                 Column(Modifier.padding(16.dp)) {
+
                                     Text(
-                                        req["title"].toString(),
+                                        text = req["title"].toString(),
                                         fontWeight = FontWeight.Bold
                                     )
 
                                     Text("Category: ${req["category"]}")
 
                                     Text(
-                                        "Preferred Date: ${req["preferred_date"]}",
+                                        text = "Preferred Date: ${req["preferred_date"]}",
                                         modifier = Modifier.clickable {
                                             selectedId = requestId
                                             showDatePicker = true
@@ -115,6 +117,7 @@ fun RequestsScreen(
 
                                     Spacer(Modifier.height(12.dp))
 
+                                    /* ---------- User Actions ---------- */
                                     Row {
                                         TextButton(
                                             enabled = !isMutating,
@@ -136,8 +139,7 @@ fun RequestsScreen(
                                                 viewModel.cancel(requestId)
                                                 scope.launch {
                                                     snackbarHostState.showSnackbar(
-                                                        "Request cancelled",
-                                                        withDismissAction = true
+                                                        "Request cancelled"
                                                     )
                                                 }
                                             },
@@ -146,6 +148,34 @@ fun RequestsScreen(
                                             )
                                         ) {
                                             Text("Cancel")
+                                        }
+                                    }
+
+                                    /* ---------- Admin Actions ---------- */
+                                    if (isAdmin) {
+                                        Spacer(Modifier.height(8.dp))
+
+                                        Row {
+                                            TextButton(
+                                                onClick = {
+                                                    viewModel.forceCancel(requestId)
+                                                },
+                                                colors = ButtonDefaults.textButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.error
+                                                )
+                                            ) {
+                                                Text("Force Cancel")
+                                            }
+
+                                            Spacer(Modifier.width(8.dp))
+
+                                            TextButton(
+                                                onClick = {
+                                                    viewModel.forceComplete(requestId)
+                                                }
+                                            ) {
+                                                Text("Force Complete")
+                                            }
                                         }
                                     }
                                 }
