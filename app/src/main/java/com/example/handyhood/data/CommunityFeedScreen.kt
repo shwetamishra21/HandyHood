@@ -140,6 +140,8 @@ private fun CommunityPostCard(
     }
 }
 
+
+
 private fun formatMillis(millis: Long): String {
     val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
     return sdf.format(Date(millis))
