@@ -6,6 +6,7 @@ interface CommunityPostRepository {
 
     suspend fun getPosts(): List<CommunityPost>
 
+
     suspend fun createPost(
         title: String,
         body: String,
