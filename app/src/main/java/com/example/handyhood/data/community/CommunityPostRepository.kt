@@ -15,5 +15,6 @@ interface CommunityPostRepository {
 
     suspend fun pinPost(postId: UUID, pinned: Boolean)
 
+
     suspend fun lockPost(postId: UUID, locked: Boolean)
 }
