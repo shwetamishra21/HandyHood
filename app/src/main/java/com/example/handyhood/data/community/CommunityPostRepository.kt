@@ -9,7 +9,9 @@ interface CommunityPostRepository {
 
     suspend fun createPost(
         title: String,
+
         body: String,
+
         category: String,
         expiresAtMillis: Long? = null
     )
