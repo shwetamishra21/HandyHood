@@ -213,9 +213,12 @@ fun ProfileScreen(
                             "dd/MM/yyyy",
                             Locale.getDefault()
                         ).format(Date(millis))
+
                         showDatePicker = false
+
                     }
                 ) { Text("OK") }
+
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
