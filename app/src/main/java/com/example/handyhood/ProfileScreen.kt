@@ -204,6 +204,7 @@ fun ProfileScreen(
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -218,6 +219,7 @@ fun ProfileScreen(
 
                     }
                 ) { Text("OK") }
+
 
             },
             dismissButton = {
