@@ -53,6 +53,7 @@ fun SearchScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Search for services...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
