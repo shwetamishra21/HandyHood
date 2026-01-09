@@ -123,8 +123,11 @@ fun RequestsScreen(
                                             enabled = !isMutating,
                                             onClick = {
                                                 selectedId = requestId
+
                                                 editTitle = req["title"].toString()
+
                                                 editDescription = req["description"].toString()
+
                                                 showEditDialog = true
                                             }
                                         ) {
