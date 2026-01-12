@@ -71,6 +71,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:storage-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.3")
 
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
