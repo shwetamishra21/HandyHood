@@ -27,18 +27,10 @@ fun AddRequestScreen(navController: NavHostController) {
     var description by remember { mutableStateOf("") }
     var preferredDate by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis(),
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= System.currentTimeMillis()
-            }
-        }
-    )
 
-    val coroutineScope = rememberCoroutineScope()
+    val datePickerState = rememberDatePickerState()
+    val scope = rememberCoroutineScope()
 
     val isFormValid = category.isNotBlank()
             && title.isNotBlank()
@@ -51,7 +43,7 @@ fun AddRequestScreen(navController: NavHostController) {
                 title = { Text("New Service Request") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, null)
                     }
                 }
             )
@@ -60,39 +52,30 @@ fun AddRequestScreen(navController: NavHostController) {
 
         Column(
             modifier = Modifier
-                .padding(padding)
-                .background(LightBlueGradient)
                 .fillMaxSize()
+                .background(LightBlueGradient)
+                .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(4.dp)
-            ) {
-
+            ElevatedCard {
                 Column(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    Text("Service Category", fontWeight = FontWeight.SemiBold)
+                    Text("Service Details", fontWeight = FontWeight.Bold)
 
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
                     ) {
-                        TextField(
+                        OutlinedTextField(
                             value = category,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Select Category") },
+                            label = { Text("Category") },
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -107,11 +90,11 @@ fun AddRequestScreen(navController: NavHostController) {
                             expanded = expanded,
                             onDismissRequest = { expanded = false }
                         ) {
-                            options.forEach { item ->
+                            options.forEach {
                                 DropdownMenuItem(
-                                    text = { Text(item) },
+                                    text = { Text(it) },
                                     onClick = {
-                                        category = item
+                                        category = it
                                         expanded = false
                                     }
                                 )
@@ -122,18 +105,16 @@ fun AddRequestScreen(navController: NavHostController) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Request Title") },
+                        label = { Text("Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Describe your issue") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp),
-                        maxLines = 5
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 4
                     )
 
                     OutlinedTextField(
@@ -142,10 +123,7 @@ fun AddRequestScreen(navController: NavHostController) {
                         readOnly = true,
                         label = { Text("Preferred Date") },
                         trailingIcon = {
-                            Icon(
-                                Icons.Default.CalendarToday,
-                                contentDescription = "Select date"
-                            )
+                            Icon(Icons.Default.CalendarToday, null)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -157,51 +135,33 @@ fun AddRequestScreen(navController: NavHostController) {
             Button(
                 enabled = isFormValid,
                 onClick = {
-                    coroutineScope.launch {
+                    scope.launch {
                         RequestRepository.addRequest(
-                            category = category,
-                            title = title,
-                            description = description,
-                            preferredDate = preferredDate
+                            category, title, description, preferredDate
                         )
                         navController.popBackStack()
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Submit Request", fontWeight = FontWeight.SemiBold)
             }
+        }
 
-            if (showDatePicker) {
-                DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                val millis =
-                                    datePickerState.selectedDateMillis
-                                        ?: System.currentTimeMillis()
-
-                                preferredDate = SimpleDateFormat(
-                                    "dd/MM/yyyy",
-                                    Locale.getDefault()
-                                ).format(Date(millis))
-
-                                showDatePicker = false
-                            }
-                        ) { Text("OK") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                ) {
-                    DatePicker(state = datePickerState)
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        preferredDate = SimpleDateFormat(
+                            "dd MMM yyyy",
+                            Locale.getDefault()
+                        ).format(Date(datePickerState.selectedDateMillis!!))
+                        showDatePicker = false
+                    }) { Text("OK") }
                 }
+            ) {
+                DatePicker(state = datePickerState)
             }
         }
     }

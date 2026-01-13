@@ -1,7 +1,6 @@
 package com.example.handyhood.ui.screens
 
 import androidx.compose.foundation.background
-import com. example. handyhood. data. ActivityViewModel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,20 +8,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.handyhood.data.ActivityViewModel
 import com.example.handyhood.data.Post
 import com.example.handyhood.data.PostsRepository
-import com.example.handyhood.ui.theme.HandyHoodTheme
 import com.example.handyhood.ui.theme.LightBlueGradient
 import kotlinx.coroutines.launch
 
@@ -42,13 +40,11 @@ fun DashboardScreen(
     val activityViewModel: ActivityViewModel = viewModel()
     val hasUnread by activityViewModel.hasUnread.collectAsState()
 
-
-    // Initial fetch
     LaunchedEffect(Unit) {
         try {
             posts = PostsRepository.fetchPosts()
         } catch (e: Exception) {
-            errorMessage = "Failed to load posts. Please try again."
+            errorMessage = "Failed to load posts"
         } finally {
             isLoading = false
         }
@@ -56,12 +52,32 @@ fun DashboardScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("HandyHood", fontWeight = FontWeight.SemiBold) },
+                actions = {
+                    IconButton(
+                        onClick = { navController.navigate("activity") }
+                    ) {
+                        BadgedBox(
+                            badge = {
+                                if (hasUnread) Badge()
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = "Activity"
+                            )
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("add_request") }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Request")
+                Icon(Icons.Default.Add, contentDescription = "New Request")
             }
         }
     ) { padding ->
@@ -76,44 +92,34 @@ fun DashboardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
 
-                // HEADER
+                /* ---------- WELCOME ---------- */
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    ElevatedCard {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
-                                text = "HandyHood",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
+                                text = "Welcome 👋",
+                                style = MaterialTheme.typography.labelLarge
                             )
                             Text(
-                                text = "Connect with your neighborhood",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-
-                // WELCOME
-                item {
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Welcome, $userEmail 👋",
+                                text = userEmail,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(Modifier.height(6.dp))
-                            Text("Connect with neighbors & build your community.")
+                            Text(
+                                text = "Stay connected with your neighborhood",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
 
-                // QUICK ACTIONS
+                /* ---------- QUICK ACTIONS ---------- */
                 item {
                     ElevatedCard {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -121,6 +127,7 @@ fun DashboardScreen(
                                 text = "Quick Actions",
                                 fontWeight = FontWeight.SemiBold
                             )
+
                             Spacer(Modifier.height(12.dp))
 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -152,14 +159,14 @@ fun DashboardScreen(
                                 ) {
                                     Icon(Icons.Default.Add, null)
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Add Request")
+                                    Text("Request")
                                 }
                             }
                         }
                     }
                 }
 
-                // MY REQUESTS
+                /* ---------- MY REQUESTS ---------- */
                 item {
                     ElevatedCard(
                         modifier = Modifier
@@ -168,18 +175,33 @@ fun DashboardScreen(
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text("My Requests", fontWeight = FontWeight.Bold)
-                                Text("Track your service requests")
+                                Text(
+                                    text = "My Requests",
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Track ongoing services",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                             Icon(Icons.Default.List, null)
                         }
                     }
                 }
 
-                // POSTS
+                /* ---------- COMMUNITY FEED ---------- */
+                item {
+                    Text(
+                        text = "Community",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
                 when {
                     isLoading -> {
                         item {
@@ -205,7 +227,10 @@ fun DashboardScreen(
 
                     posts.isEmpty() -> {
                         item {
-                            Text("No community posts yet.")
+                            Text(
+                                text = "No community posts yet",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
 
@@ -213,11 +238,20 @@ fun DashboardScreen(
                         items(posts) { post ->
                             ElevatedCard {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(post.author, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = post.author,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                     Spacer(Modifier.height(4.dp))
-                                    Text(post.title)
+                                    Text(
+                                        text = post.title,
+                                        fontWeight = FontWeight.Medium
+                                    )
                                     Spacer(Modifier.height(8.dp))
-                                    Text(post.content)
+                                    Text(
+                                        text = post.content,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
@@ -225,16 +259,5 @@ fun DashboardScreen(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DashboardPreview() {
-    HandyHoodTheme {
-        DashboardScreen(
-            navController = rememberNavController(),
-            userEmail = "preview@handyhood.com"
-        )
     }
 }

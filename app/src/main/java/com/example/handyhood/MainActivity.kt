@@ -1,6 +1,7 @@
 package com.example.handyhood
 
 import android.os.Bundle
+import io. github. jan. supabase. gotrue. auth
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,10 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
+import com.example.handyhood.data.remote.SupabaseClient
 import com.example.handyhood.ui.screens.LoginScreen
 import com.example.handyhood.ui.theme.HandyHoodTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,6 +32,10 @@ class MainActivity : ComponentActivity() {
 
                     val authViewModel: SupabaseAuthViewModel = viewModel()
                     val authState by authViewModel.authState.collectAsState()
+
+                    /* --- PASSWORD RESET SESSION HANDLING --- */
+                    LaunchedEffect(Unit) {
+                    }
 
                     when (authState) {
                         is AuthResult.Success -> {

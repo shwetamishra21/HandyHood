@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,16 +36,13 @@ fun ProfileScreen(
     userName: String,
     onSignOut: () -> Unit
 ) {
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Local profile (unchanged)
     val localProfile by ProfileRepository.loadProfile(context).collectAsState(
         initial = ProfileData("", "", "", "", "", false)
     )
 
-    // DB profile (NEW)
     var dbProfile by remember { mutableStateOf<Map<String, Any?>?>(null) }
 
     LaunchedEffect(Unit) {
@@ -51,18 +50,11 @@ fun ProfileScreen(
     }
 
     var name by remember {
-        mutableStateOf(
-            dbProfile?.get("name")?.toString()
-                ?: localProfile.name.ifEmpty { userName }
-        )
+        mutableStateOf(dbProfile?.get("name")?.toString() ?: userName)
     }
-
     var email by remember {
-        mutableStateOf(
-            dbProfile?.get("email")?.toString() ?: localProfile.email
-        )
+        mutableStateOf(dbProfile?.get("email")?.toString() ?: localProfile.email)
     }
-
     var neighborhood by remember { mutableStateOf(localProfile.neighborhood) }
     var birthday by remember { mutableStateOf(localProfile.birthday) }
     var verified by remember { mutableStateOf(localProfile.verified) }
@@ -77,126 +69,153 @@ fun ProfileScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LightBlueGradient)
-            .padding(16.dp)
-    ) {
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Image(
-                painter = rememberAsyncImagePainter(
-                    if (imageUri.isNotEmpty()) imageUri
-                    else "https://i.imgur.com/4M7IWwP.png"
-                ),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .clickable { imagePicker.launch("image/*") }
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Profile", fontWeight = FontWeight.SemiBold) }
             )
+        }
+    ) { padding ->
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightBlueGradient)
+                .padding(padding)
+                .padding(16.dp)
+        ) {
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = verified,
-                    onCheckedChange = { verified = it }
-                )
-                Icon(
-                    Icons.Default.Star,
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                /* ---------- AVATAR ---------- */
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        if (imageUri.isNotEmpty()) imageUri
+                        else "https://i.imgur.com/4M7IWwP.png"
+                    ),
                     contentDescription = null,
-                    tint = Color(0xFFFFA726)
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .clickable { imagePicker.launch("image/*") }
                 )
-                Text("Community Verified", fontWeight = FontWeight.SemiBold)
-            }
 
-            Spacer(modifier = Modifier.height(25.dp))
+                Spacer(Modifier.height(12.dp))
 
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                Text(
+                    text = name.ifBlank { "Unnamed User" },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
 
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Full Name") },
-                        modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = if (verified) Color(0xFFFFA726)
+                        else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = neighborhood,
-                        onValueChange = { neighborhood = it },
-                        label = { Text("Neighborhood") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = birthday,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Birthday") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showDatePicker = true }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = if (verified) "Community Verified" else "Not Verified",
+                        fontWeight = FontWeight.Medium
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    scope.launch {
-                        ProfileRepository.saveProfile(
-                            context,
-                            name,
-                            email,
-                            neighborhood,
-                            birthday,
-                            imageUri,
-                            verified
+                /* ---------- DETAILS CARD ---------- */
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Full Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = neighborhood,
+                            onValueChange = { neighborhood = it },
+                            label = { Text("Neighborhood") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = birthday,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Birthday") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showDatePicker = true }
                         )
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp)
-            ) {
-                Text("Save Profile", fontWeight = FontWeight.Bold)
-            }
+                }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(Modifier.height(20.dp))
 
-            OutlinedButton(
-                onClick = onSignOut,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp)
-            ) {
-                Text("Logout")
+                /* ---------- ACTIONS ---------- */
+                Button(
+                    onClick = {
+                        scope.launch {
+                            ProfileRepository.saveProfile(
+                                context,
+                                name,
+                                email,
+                                neighborhood,
+                                birthday,
+                                imageUri,
+                                verified
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save Changes", fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = onSignOut,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                ) {
+                    Icon(Icons.Default.Logout, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Logout")
+                }
             }
         }
     }
@@ -204,7 +223,6 @@ fun ProfileScreen(
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
-
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -214,16 +232,14 @@ fun ProfileScreen(
                             "dd/MM/yyyy",
                             Locale.getDefault()
                         ).format(Date(millis))
-
                         showDatePicker = false
-
                     }
                 ) { Text("OK") }
-
-
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
             }
         ) {
             DatePicker(state = datePickerState)

@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: SupabaseAuthViewModel = viewModel(),
@@ -22,11 +23,13 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isSignup by remember { mutableStateOf(false) } // 🔑 toggle
+    var showForgotDialog by remember { mutableStateOf(false) }
+    var resetEmail by remember { mutableStateOf("") }
+    var isSignup by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsState()
 
-    // Navigate after success (login OR signup)
+    /* ---------- AUTH SUCCESS ---------- */
     LaunchedEffect(authState) {
         if (authState is AuthResult.Success) {
             onLoginSuccess()
@@ -46,8 +49,9 @@ fun LoginScreen(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
 
+        /* ---------- EMAIL ---------- */
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -55,11 +59,13 @@ fun LoginScreen(
             leadingIcon = {
                 Icon(Icons.Default.Email, contentDescription = null)
             },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
+        /* ---------- PASSWORD ---------- */
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -70,10 +76,11 @@ fun LoginScreen(
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        if (passwordVisible)
-                            Icons.Default.Visibility
-                        else
-                            Icons.Default.VisibilityOff,
+                        imageVector =
+                            if (passwordVisible)
+                                Icons.Default.Visibility
+                            else
+                                Icons.Default.VisibilityOff,
                         contentDescription = null
                     )
                 }
@@ -83,30 +90,42 @@ fun LoginScreen(
                     VisualTransformation.None
                 else
                     PasswordVisualTransformation(),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        /* ---------- FORGOT PASSWORD ---------- */
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = { showForgotDialog = true }) {
+                Text("Forgot password?")
+            }
+        }
 
+        Spacer(Modifier.height(20.dp))
+
+        /* ---------- LOGIN / SIGNUP ---------- */
         Button(
+            modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (isSignup) {
                     viewModel.signUp(email.trim(), password)
                 } else {
                     viewModel.signIn(email.trim(), password)
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
+            }
         ) {
             Text(if (isSignup) "Sign Up" else "Login")
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // 🔁 Toggle Login <-> Signup
-        TextButton(
-            onClick = { isSignup = !isSignup }
-        ) {
+        /* ---------- TOGGLE ---------- */
+        TextButton(onClick = { isSignup = !isSignup }) {
             Text(
                 if (isSignup)
                     "Already have an account? Login"
@@ -115,8 +134,9 @@ fun LoginScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
+        /* ---------- STATE FEEDBACK ---------- */
         when (authState) {
             is AuthResult.Loading -> {
                 CircularProgressIndicator()
@@ -131,5 +151,47 @@ fun LoginScreen(
 
             else -> {}
         }
+    }
+
+    /* ---------- FORGOT PASSWORD DIALOG ---------- */
+    if (showForgotDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotDialog = false },
+            title = { Text("Reset password") },
+            text = {
+                Column {
+                    Text(
+                        "Enter your email and we’ll send you a reset link.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = resetEmail.isNotBlank(),
+                    onClick = {
+                        viewModel.sendPasswordReset(resetEmail.trim())
+                        showForgotDialog = false
+                    }
+                ) {
+                    Text("Send")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showForgotDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

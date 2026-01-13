@@ -17,20 +17,11 @@ class SupabaseAuthViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            // ✅ CORRECT for supabase-kt 2.x
             auth.loadFromStorage()
-
             val user = auth.currentUserOrNull()
             _authState.value =
                 if (user != null) AuthResult.Success(user)
                 else AuthResult.Idle
-        }
-    }
-
-    fun signUp(email: String, password: String) {
-        viewModelScope.launch {
-            _authState.value = AuthResult.Loading
-            _authState.value = AuthRepository.signUp(email, password)
         }
     }
 
@@ -41,10 +32,58 @@ class SupabaseAuthViewModel : ViewModel() {
         }
     }
 
+    fun signUp(email: String, password: String) {
+        viewModelScope.launch {
+            _authState.value = AuthResult.Loading
+            _authState.value = AuthRepository.signUp(email, password)
+        }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             AuthRepository.signOut()
             _authState.value = AuthResult.Idle
+        }
+    }
+
+    /* ---------- PASSWORD RESET (ANDROID-CORRECT) ---------- */
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch {
+            try {
+                auth.resetPasswordForEmail(email)
+
+                // one-time UI feedback
+                _authState.value = AuthResult.Error(
+                    "Password reset email sent"
+                )
+
+            } catch (e: Exception) {
+                _authState.value = AuthResult.Error(
+                    e.message ?: "Failed to send reset email"
+                )
+            }
+        }
+    }
+
+    fun updatePassword(newPassword: String) {
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthResult.Loading
+
+                auth.updateUser {
+                    password = newPassword
+                }
+
+                val user = auth.currentUserOrNull()
+                _authState.value =
+                    if (user != null) AuthResult.Success(user)
+                    else AuthResult.Error("Session expired")
+
+            } catch (e: Exception) {
+                _authState.value = AuthResult.Error(
+                    e.message ?: "Password update failed"
+                )
+            }
         }
     }
 }

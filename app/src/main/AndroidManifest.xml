@@ -17,17 +17,33 @@
         android:theme="@style/Theme.HandyHood"
         tools:targetApi="31">
 
+        <!-- SINGLE MainActivity (Launcher + Reset Deep Link) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.HandyHood"
             android:windowSoftInputMode="adjustResize">
+
+            <!-- APP LAUNCH -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- 🔐 PASSWORD RESET DEEP LINK -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="handyhood"
+                    android:host="reset" />
+            </intent-filter>
+
         </activity>
+
     </application>
 
 </manifest>
