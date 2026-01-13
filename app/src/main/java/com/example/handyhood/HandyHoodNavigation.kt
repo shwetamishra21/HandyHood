@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import io. github. jan. supabase. gotrue. auth
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -13,13 +12,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
-import com.example.handyhood.data.remote.SupabaseClient
 import com.example.handyhood.ui.screens.*
 import java.util.UUID
-
-/* ---------- ROUTES ---------- */
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector?) {
     object Welcome : Screen("welcome", "Welcome", null)
@@ -27,9 +22,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Search : Screen("search", "Search", Icons.Default.Search)
     object Inbox : Screen("inbox", "Inbox", Icons.Default.Inbox)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
-    object Activity : Screen("activity", "Activity", null)
-    object Requests : Screen("requests", "Requests", null)
-    object AddRequest : Screen("add_request", "Add Request", null)
     object ResetPassword : Screen("reset_password", "Reset Password", null)
 
     object Chat : Screen("chat/{id}", "Chat", null) {
@@ -37,18 +29,13 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     }
 }
 
-/* ---------- NAV ROOT ---------- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HandyHoodNavigation() {
-
+fun HandyHoodNavigation(
+    startDestination: Screen = Screen.Dashboard
+) {
     val navController = rememberNavController()
     val authViewModel: SupabaseAuthViewModel = viewModel()
-    val authState by authViewModel.authState.collectAsState()
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
 
     val bottomNavScreens = listOf(
         Screen.Dashboard,
@@ -57,11 +44,12 @@ fun HandyHoodNavigation() {
         Screen.Profile
     )
 
-    val showBottomBar = bottomNavScreens.any { it.route == currentRoute }
+    val currentRoute =
+        navController.currentBackStackEntryAsState().value?.destination?.route
 
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
+            if (bottomNavScreens.any { it.route == currentRoute }) {
                 NavigationBar {
                     bottomNavScreens.forEach { screen ->
                         NavigationBarItem(
@@ -71,15 +59,12 @@ fun HandyHoodNavigation() {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
-                                    launchSingleTop = true
                                     restoreState = true
+                                    launchSingleTop = true
                                 }
                             },
                             icon = {
-                                Icon(
-                                    imageVector = screen.icon!!,
-                                    contentDescription = screen.title
-                                )
+                                Icon(screen.icon!!, screen.title)
                             },
                             label = { Text(screen.title) }
                         )
@@ -91,31 +76,12 @@ fun HandyHoodNavigation() {
 
         NavHost(
             navController = navController,
-            startDestination = when (authState) {
-                is AuthResult.Success -> Screen.Dashboard.route
-                else -> Screen.Welcome.route
-            },
+            startDestination = startDestination.route,
             modifier = Modifier.padding(padding)
         ) {
 
-            composable(Screen.Welcome.route) {
-                WelcomeScreen(
-                    onGetStartedClick = {
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo(Screen.Welcome.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
             composable(Screen.Dashboard.route) {
-                DashboardScreen(
-                    navController = navController,
-                    userEmail = SupabaseClient.client
-                        .auth
-                        .currentUserOrNull()
-                        ?.email ?: "User"
-                )
+                DashboardScreen(navController, "User")
             }
 
             composable(Screen.Search.route) {
@@ -133,9 +99,7 @@ fun HandyHoodNavigation() {
 
             composable(Screen.Profile.route) {
                 ProfileScreen(
-                    userName = SupabaseClient.client.auth
-                        .currentUserOrNull()
-                        ?.email ?: "User",
+                    userName = "User",
                     onSignOut = {
                         authViewModel.signOut()
                         navController.navigate(Screen.Welcome.route) {
@@ -143,18 +107,6 @@ fun HandyHoodNavigation() {
                         }
                     }
                 )
-            }
-
-            composable(Screen.Activity.route) {
-                ActivityScreen()
-            }
-
-            composable(Screen.Requests.route) {
-                RequestsScreen(navController)
-            }
-
-            composable(Screen.AddRequest.route) {
-                AddRequestScreen(navController)
             }
 
             composable(Screen.ResetPassword.route) {
@@ -170,15 +122,12 @@ fun HandyHoodNavigation() {
             composable(
                 route = Screen.Chat.route,
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val id = UUID.fromString(
-                    backStackEntry.arguments!!.getString("id")!!
-                )
-
+            ) { entry ->
+                val id = UUID.fromString(entry.arguments!!.getString("id")!!)
                 ChatScreen(
                     title = "Conversation",
-                    messages = emptyList(), // realtime wiring later
-                    onSend = { /* handled later */ },
+                    messages = emptyList(),
+                    onSend = {},
                     onBack = { navController.popBackStack() }
                 )
             }
