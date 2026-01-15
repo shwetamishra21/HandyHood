@@ -20,7 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.handyhood.data.ActivityViewModel
 import com.example.handyhood.data.Post
-import com.example.handyhood.data.PostsRepository
+import com.example.handyhood.data.PostsRepositoryImpl
 import com.example.handyhood.ui.theme.LightBlueGradient
 import kotlinx.coroutines.launch
 
@@ -30,6 +30,12 @@ fun DashboardScreen(
     navController: NavHostController,
     userEmail: String
 ) {
+    // ✅ PROPER ViewModel injection
+    val activityViewModel: ActivityViewModel = viewModel()
+    val hasUnread by activityViewModel.hasUnread.collectAsState()
+
+    // ✅ Repository instance
+    val postsRepository = remember { PostsRepositoryImpl() }
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -37,12 +43,10 @@ fun DashboardScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val activityViewModel: ActivityViewModel = viewModel()
-    val hasUnread by activityViewModel.hasUnread.collectAsState()
-
+    // ✅ Load posts on screen entry
     LaunchedEffect(Unit) {
         try {
-            posts = PostsRepository.fetchPosts()
+            posts = postsRepository.fetchPosts()
         } catch (e: Exception) {
             errorMessage = "Failed to load posts"
         } finally {
@@ -56,39 +60,26 @@ fun DashboardScreen(
             CenterAlignedTopAppBar(
                 title = { Text("HandyHood", fontWeight = FontWeight.SemiBold) },
                 actions = {
-                    IconButton(
-                        onClick = { navController.navigate("activity") }
-                    ) {
-                        BadgedBox(
-                            badge = {
-                                if (hasUnread) Badge()
-                            }
-                        ) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                contentDescription = "Activity"
-                            )
+                    IconButton(onClick = { navController.navigate("activity") }) {
+                        BadgedBox(badge = { if (hasUnread) Badge() }) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Activity")
                         }
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("add_request") }
-            ) {
+            FloatingActionButton(onClick = { navController.navigate("add_request") }) {
                 Icon(Icons.Default.Add, contentDescription = "New Request")
             }
         }
     ) { padding ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(LightBlueGradient)
                 .padding(padding)
         ) {
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -96,15 +87,11 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-
                 /* ---------- WELCOME ---------- */
                 item {
                     ElevatedCard {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            Text(
-                                text = "Welcome 👋",
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                            Text(text = "Welcome 👋", style = MaterialTheme.typography.labelLarge)
                             Text(
                                 text = userEmail,
                                 style = MaterialTheme.typography.headlineSmall,
@@ -123,22 +110,16 @@ fun DashboardScreen(
                 item {
                     ElevatedCard {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Quick Actions",
-                                fontWeight = FontWeight.SemiBold
-                            )
-
+                            Text(text = "Quick Actions", fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(12.dp))
-
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
                                 FilledTonalButton(
                                     modifier = Modifier.weight(1f),
                                     onClick = {
                                         coroutineScope.launch {
                                             isLoading = true
                                             try {
-                                                posts = PostsRepository.fetchPosts()
+                                                posts = postsRepository.fetchPosts()
                                                 snackbarHostState.showSnackbar("Feed refreshed")
                                             } catch (e: Exception) {
                                                 snackbarHostState.showSnackbar("Refresh failed")
@@ -152,7 +133,6 @@ fun DashboardScreen(
                                     Spacer(Modifier.width(6.dp))
                                     Text("Refresh")
                                 }
-
                                 FilledTonalButton(
                                     modifier = Modifier.weight(1f),
                                     onClick = { navController.navigate("add_request") }
@@ -179,10 +159,7 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text(
-                                    text = "My Requests",
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text(text = "My Requests", fontWeight = FontWeight.Bold)
                                 Text(
                                     text = "Track ongoing services",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -215,7 +192,6 @@ fun DashboardScreen(
                             }
                         }
                     }
-
                     errorMessage != null -> {
                         item {
                             Text(
@@ -224,7 +200,6 @@ fun DashboardScreen(
                             )
                         }
                     }
-
                     posts.isEmpty() -> {
                         item {
                             Text(
@@ -233,20 +208,13 @@ fun DashboardScreen(
                             )
                         }
                     }
-
                     else -> {
                         items(posts) { post ->
                             ElevatedCard {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = post.author,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Text(text = post.author, fontWeight = FontWeight.SemiBold)
                                     Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = post.title,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                    Text(text = post.title, fontWeight = FontWeight.Medium)
                                     Spacer(Modifier.height(8.dp))
                                     Text(
                                         text = post.content,

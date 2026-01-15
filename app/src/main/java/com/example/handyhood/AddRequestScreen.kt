@@ -1,6 +1,6 @@
 package com.example.handyhood.ui.screens
 
-import com.example.handyhood.data.RequestRepository
+import com.example.handyhood.data.RequestsRepository
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,7 +20,10 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRequestScreen(navController: NavHostController) {
+fun AddRequestScreen(
+    navController: NavHostController,
+    requestsRepository: RequestsRepository // ✅ Added parameter
+) {
 
     var category by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
@@ -136,7 +139,7 @@ fun AddRequestScreen(navController: NavHostController) {
                 enabled = isFormValid,
                 onClick = {
                     scope.launch {
-                        RequestRepository.addRequest(
+                        requestsRepository.addRequest(  // ✅ Now uses injected repo
                             category, title, description, preferredDate
                         )
                         navController.popBackStack()

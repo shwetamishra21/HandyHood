@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class ActivityViewModel : ViewModel() {
+class ActivityViewModel : ViewModel() {  // ✅ No-arg constructor = NO CRASH
 
     private val _activities =
         MutableStateFlow<List<Map<String, Any?>>>(emptyList())
@@ -17,14 +17,12 @@ class ActivityViewModel : ViewModel() {
 
     init {
         refresh()
-        RequestRepository.startRequestsRealtime {
-            refresh()
-        }
     }
 
     fun refresh() {
         viewModelScope.launch {
             try {
+                // ✅ Direct calls - no injection needed
                 val list = ActivityRepository.fetchMyActivities()
                 _activities.value = list
                 _hasUnread.value = list.any { it["is_read"] == false }
@@ -34,16 +32,14 @@ class ActivityViewModel : ViewModel() {
         }
     }
 
-
     fun markAllRead() {
         viewModelScope.launch {
             ActivityRepository.markAllRead()
             refresh()
         }
     }
+
     override fun onCleared() {
         super.onCleared()
-        RequestRepository.stopRequestsRealtime()
     }
-
 }

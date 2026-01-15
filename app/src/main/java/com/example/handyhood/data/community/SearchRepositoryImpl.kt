@@ -2,7 +2,10 @@ package com.example.handyhood.data.community
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
+import kotlinx. serialization. json. contentOrNull
 
 class SearchRepositoryImpl(
     private val supabase: SupabaseClient
@@ -12,13 +15,17 @@ class SearchRepositoryImpl(
         val rows = supabase
             .from("search_people_admin")
             .select()
-            .decodeList<Map<String, Any?>>()
+            .decodeList<JsonObject>()
 
-        return rows.map { row ->
+        return rows.mapNotNull { row ->
+            val id = row["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val name = row["name"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val email = row["email"]?.jsonPrimitive?.contentOrNull ?: ""
+
             SearchPerson(
-                id = UUID.fromString(row["id"] as String),
-                name = row["name"] as String,
-                email = row["email"] as String
+                id = UUID.fromString(id),
+                name = name,
+                email = email
             )
         }
     }
@@ -27,14 +34,20 @@ class SearchRepositoryImpl(
         val rows = supabase
             .from("search_providers")
             .select()
-            .decodeList<Map<String, Any?>>()
+            .decodeList<JsonObject>()
 
-        return rows.map { row ->
+        return rows.mapNotNull { row ->
+            val id = row["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val name = row["name"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val serviceType =
+                row["service_type"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val experience = row["experience"]?.jsonPrimitive?.contentOrNull
+
             SearchProvider(
-                id = UUID.fromString(row["id"] as String),
-                name = row["name"] as String,
-                serviceType = row["service_type"] as String,
-                experience = row["experience"] as String?
+                id = UUID.fromString(id),
+                name = name,
+                serviceType = serviceType,
+                experience = experience
             )
         }
     }

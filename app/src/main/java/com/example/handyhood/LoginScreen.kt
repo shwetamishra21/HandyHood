@@ -5,6 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -13,12 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    viewModel: SupabaseAuthViewModel = viewModel(),
-    onLoginSuccess: () -> Unit = {}
+    navController: NavHostController = rememberNavController(),
+    viewModel: SupabaseAuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -26,13 +29,17 @@ fun LoginScreen(
     var showForgotDialog by remember { mutableStateOf(false) }
     var resetEmail by remember { mutableStateOf("") }
     var isSignup by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()  // ✅ Added for navigation
 
     val authState by viewModel.authState.collectAsState()
 
     /* ---------- AUTH SUCCESS ---------- */
     LaunchedEffect(authState) {
         if (authState is AuthResult.Success) {
-            onLoginSuccess()
+            navController.navigate("dashboard") {  // ✅ Fixed: Use navController
+                popUpTo("login") { inclusive = true }
+                popUpTo("welcome") { inclusive = true }
+            }
         }
     }
 
@@ -43,7 +50,6 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Text(
             text = if (isSignup) "Create Account" else "Login",
             style = MaterialTheme.typography.headlineMedium
@@ -56,9 +62,7 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            leadingIcon = {
-                Icon(Icons.Default.Email, contentDescription = null)
-            },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -70,26 +74,16 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = null)
-            },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector =
-                            if (passwordVisible)
-                                Icons.Default.Visibility
-                            else
-                                Icons.Default.VisibilityOff,
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = null
                     )
                 }
             },
-            visualTransformation =
-                if (passwordVisible)
-                    VisualTransformation.None
-                else
-                    PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -127,10 +121,8 @@ fun LoginScreen(
         /* ---------- TOGGLE ---------- */
         TextButton(onClick = { isSignup = !isSignup }) {
             Text(
-                if (isSignup)
-                    "Already have an account? Login"
-                else
-                    "New user? Create account"
+                if (isSignup) "Already have an account? Login"
+                else "New user? Create account"
             )
         }
 
@@ -138,17 +130,11 @@ fun LoginScreen(
 
         /* ---------- STATE FEEDBACK ---------- */
         when (authState) {
-            is AuthResult.Loading -> {
-                CircularProgressIndicator()
-            }
-
-            is AuthResult.Error -> {
-                Text(
-                    text = (authState as AuthResult.Error).message,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
+            is AuthResult.Loading -> CircularProgressIndicator()
+            is AuthResult.Error -> Text(
+                text = (authState as AuthResult.Error).message,
+                color = MaterialTheme.colorScheme.error
+            )
             else -> {}
         }
     }
@@ -161,12 +147,10 @@ fun LoginScreen(
             text = {
                 Column {
                     Text(
-                        "Enter your email and we’ll send you a reset link.",
+                        "Enter your email and we'll send you a reset link.",
                         style = MaterialTheme.typography.bodyMedium
                     )
-
                     Spacer(Modifier.height(12.dp))
-
                     OutlinedTextField(
                         value = resetEmail,
                         onValueChange = { resetEmail = it },

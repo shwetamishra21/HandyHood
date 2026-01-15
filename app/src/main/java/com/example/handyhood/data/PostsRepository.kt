@@ -2,12 +2,12 @@
 
 package com.example.handyhood.data
 
+import com.example.handyhood.data.remote.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import com.example.handyhood.data.remote.SupabaseClient
 import kotlinx.serialization.builtins.ListSerializer
 
 @Serializable
@@ -19,27 +19,27 @@ data class Post(
     val timestamp: Long
 )
 
-object PostsRepository {
+interface PostsRepository {
+    suspend fun fetchPosts(): List<Post>
+    suspend fun addPost(title: String, author: String, content: String)  // ✅ Unit return
+}
 
-    suspend fun fetchPosts(): List<Post> = withContext(Dispatchers.IO) {
+class PostsRepositoryImpl : PostsRepository {
+
+    override suspend fun fetchPosts(): List<Post> = withContext(Dispatchers.IO) {
         try {
             val result = SupabaseClient.client
                 .from("posts")
                 .select()
-
-            Json.decodeFromString(
-                ListSerializer(Post.serializer()),
-                result.data ?: "[]"
-            )
-
+                .decodeList<Post>()  // ✅ Direct decodeList<Post>
+            result
         } catch (e: Exception) {
-            e.printStackTrace()
             emptyList()
         }
     }
 
-    suspend fun addPost(title: String, author: String, content: String) {
-        withContext(Dispatchers.IO) {
+    override suspend fun addPost(title: String, author: String, content: String): Unit =
+        withContext(Dispatchers.IO) {  // ✅ Explicit Unit return
             try {
                 val newPost = Post(
                     title = title,
@@ -47,14 +47,10 @@ object PostsRepository {
                     content = content,
                     timestamp = System.currentTimeMillis()
                 )
-
-                SupabaseClient.client
-                    .from("posts")
-                    .insert(newPost)
-
+                SupabaseClient.client.from("posts").insert(newPost)
+                // ✅ No return value = Unit
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Silent fail
             }
         }
-    }
 }

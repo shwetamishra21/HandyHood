@@ -18,10 +18,11 @@ class SupabaseAuthViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             auth.loadFromStorage()
-            val user = auth.currentUserOrNull()
             _authState.value =
-                if (user != null) AuthResult.Success(user)
-                else AuthResult.Idle
+                if (auth.currentUserOrNull() != null)
+                    AuthResult.Success(auth.currentUserOrNull()!!)
+                else
+                    AuthResult.Idle
         }
     }
 
@@ -45,18 +46,14 @@ class SupabaseAuthViewModel : ViewModel() {
             _authState.value = AuthResult.Idle
         }
     }
-
-    /* ---------- PASSWORD RESET (ANDROID-CORRECT) ---------- */
     fun sendPasswordReset(email: String) {
         viewModelScope.launch {
             try {
                 auth.resetPasswordForEmail(email)
 
-                // one-time UI feedback
                 _authState.value = AuthResult.Error(
                     "Password reset email sent"
                 )
-
             } catch (e: Exception) {
                 _authState.value = AuthResult.Error(
                     e.message ?: "Failed to send reset email"
@@ -64,7 +61,6 @@ class SupabaseAuthViewModel : ViewModel() {
             }
         }
     }
-
     fun updatePassword(newPassword: String) {
         viewModelScope.launch {
             try {
@@ -86,4 +82,6 @@ class SupabaseAuthViewModel : ViewModel() {
             }
         }
     }
+
+
 }
