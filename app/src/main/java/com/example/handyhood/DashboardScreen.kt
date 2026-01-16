@@ -30,11 +30,9 @@ fun DashboardScreen(
     navController: NavHostController,
     userEmail: String
 ) {
-    // ✅ PROPER ViewModel injection
     val activityViewModel: ActivityViewModel = viewModel()
     val hasUnread by activityViewModel.hasUnread.collectAsState()
 
-    // ✅ Repository instance
     val postsRepository = remember { PostsRepositoryImpl() }
     var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -43,7 +41,6 @@ fun DashboardScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // ✅ Load posts on screen entry
     LaunchedEffect(Unit) {
         try {
             posts = postsRepository.fetchPosts()
@@ -87,7 +84,6 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                /* ---------- WELCOME ---------- */
                 item {
                     ElevatedCard {
                         Column(modifier = Modifier.padding(20.dp)) {
@@ -106,7 +102,6 @@ fun DashboardScreen(
                     }
                 }
 
-                /* ---------- QUICK ACTIONS ---------- */
                 item {
                     ElevatedCard {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -146,12 +141,11 @@ fun DashboardScreen(
                     }
                 }
 
-                /* ---------- MY REQUESTS ---------- */
                 item {
                     ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { navController.navigate("requests") }
+                            .clickable { navController.navigate("requests") }  // ✅ FIXED
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -170,7 +164,6 @@ fun DashboardScreen(
                     }
                 }
 
-                /* ---------- COMMUNITY FEED ---------- */
                 item {
                     Text(
                         text = "Community",

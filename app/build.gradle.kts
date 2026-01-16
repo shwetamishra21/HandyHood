@@ -33,17 +33,23 @@ android {
 
     // ✅ R8 OPTIMIZATION - 30-50% faster + smaller APK
     buildTypes {
+
         debug {
-            isMinifyEnabled = true        // ✅ Debug gets R8 too
-            isShrinkResources = true      // ✅ Remove unused resources
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

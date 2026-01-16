@@ -1,21 +1,47 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+########################################
+# Kotlin Serialization
+########################################
+-keep class kotlinx.serialization.** { *; }
+-keepclassmembers class ** {
+    @kotlinx.serialization.Serializable <fields>;
+}
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+########################################
+# Supabase Core
+########################################
+-keep class io.github.jan.supabase.** { *; }
+-dontwarn io.github.jan.supabase.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+########################################
+# Supabase Realtime
+########################################
+-keep class io.github.jan.supabase.realtime.** { *; }
+-dontwarn io.github.jan.supabase.realtime.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+########################################
+# Supabase PostgREST
+########################################
+-keep class io.github.jan.supabase.postgrest.** { *; }
+-dontwarn io.github.jan.supabase.postgrest.**
+
+########################################
+# Coroutines / Flow
+########################################
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+########################################
+# UUID (used heavily in decoding)
+########################################
+-keep class java.util.UUID { *; }
+
+########################################
+# HandyHood app models + repositories
+########################################
+-keep class com.example.handyhood.data.** { *; }
+-keep class com.example.handyhood.ui.** { *; }
+
+########################################
+# General JSON safety
+########################################
+-dontwarn sun.misc.**

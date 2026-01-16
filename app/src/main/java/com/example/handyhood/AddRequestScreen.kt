@@ -1,6 +1,5 @@
 package com.example.handyhood.ui.screens
 
-import com.example.handyhood.data.RequestsRepository
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,9 +9,11 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.handyhood.data.RequestsRepository
 import com.example.handyhood.ui.theme.LightBlueGradient
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -22,17 +23,17 @@ import java.util.*
 @Composable
 fun AddRequestScreen(
     navController: NavHostController,
-    requestsRepository: RequestsRepository // ✅ Added parameter
+    requestsRepository: RequestsRepository
 ) {
-
     var category by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var preferredDate by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }  // ✅ Date picker toggle
 
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState()  // ✅ Material3 DatePicker
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
     val isFormValid = category.isNotBlank()
@@ -70,6 +71,7 @@ fun AddRequestScreen(
 
                     Text("Service Details", fontWeight = FontWeight.Bold)
 
+                    // Category Dropdown
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -78,7 +80,7 @@ fun AddRequestScreen(
                             value = category,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Category") },
+                            label = { Text("Category *") },
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -108,29 +110,33 @@ fun AddRequestScreen(
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Title") },
+                        label = { Text("Title *") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Description") },
+                        label = { Text("Description *") },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 4
                     )
 
+                    // ✅ FIXED WORKING DATE PICKER FIELD
                     OutlinedTextField(
                         value = preferredDate,
-                        onValueChange = {},
+                        onValueChange = { preferredDate = it },
+                        label = { Text("Preferred Date *") },
                         readOnly = true,
-                        label = { Text("Preferred Date") },
                         trailingIcon = {
-                            Icon(Icons.Default.CalendarToday, null)
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, "Select Date")
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showDatePicker = true }
+                            .clickable { showDatePicker = true },
+                        placeholder = { Text("Click calendar to select") }
                     )
                 }
             }
@@ -139,29 +145,48 @@ fun AddRequestScreen(
                 enabled = isFormValid,
                 onClick = {
                     scope.launch {
-                        requestsRepository.addRequest(  // ✅ Now uses injected repo
-                            category, title, description, preferredDate
-                        )
+                        if (isFormValid) {
+                            requestsRepository.addRequest(
+                                category, title, description, preferredDate
+                            )
+                            focusManager.clearFocus()
+                        }
                         navController.popBackStack()
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Submit Request", fontWeight = FontWeight.SemiBold)
+                Text("Submit Request", fontWeight = FontWeight.Bold)
             }
         }
 
+        // ✅ FIXED WORKING DATE PICKER DIALOG
         if (showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
+                onDismissRequest = {
+                    showDatePicker = false
+                },
                 confirmButton = {
-                    TextButton(onClick = {
-                        preferredDate = SimpleDateFormat(
-                            "dd MMM yyyy",
-                            Locale.getDefault()
-                        ).format(Date(datePickerState.selectedDateMillis!!))
-                        showDatePicker = false
-                    }) { Text("OK") }
+                    TextButton(
+                        onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                preferredDate = SimpleDateFormat(
+                                    "dd/MM/yyyy",
+                                    Locale.getDefault()
+                                ).format(Date(millis))
+                            }
+                            showDatePicker = false
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDatePicker = false }
+                    ) {
+                        Text("Cancel")
+                    }
                 }
             ) {
                 DatePicker(state = datePickerState)

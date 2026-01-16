@@ -3,33 +3,40 @@ package com.example.handyhood.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.handyhood.data.RequestsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RequestsScreen() {
-    // ✅ FIXED: ViewModel injected INSIDE composable body
+fun RequestsScreen(
+    navController: NavHostController  // ✅ ADDED
+) {
     val viewModel: RequestsViewModel = viewModel()
-
     val requests by viewModel.requests.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // ✅ Auto-load on screen entry
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel) {
         viewModel.loadRequests()
     }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("My Requests") }
+            TopAppBar(
+                title = { Text("My Requests") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {  // ✅ ADDED
+                        Icon(Icons.Default.ArrowBack, "Back")
+                    }
+                }
             )
         }
     ) { padding ->
