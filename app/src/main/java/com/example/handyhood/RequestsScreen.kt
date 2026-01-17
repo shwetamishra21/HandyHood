@@ -28,6 +28,21 @@ fun RequestsScreen(
         viewModel.loadRequests()
     }
 
+    // 🔄 Listen for refresh trigger from AddRequestScreen
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+
+    LaunchedEffect(savedStateHandle) {
+        savedStateHandle
+            ?.getStateFlow("refresh_requests", false)
+            ?.collect { refresh ->
+                if (refresh) {
+                    viewModel.loadRequests()     // reload list
+                    savedStateHandle["refresh_requests"] = false
+                }
+            }
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(

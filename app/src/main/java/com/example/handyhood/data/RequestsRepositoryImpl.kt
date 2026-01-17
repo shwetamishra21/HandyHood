@@ -1,42 +1,50 @@
 package com.example.handyhood.data
 
 import com.example.handyhood.data.remote.SupabaseClient
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import io. github. jan. supabase. postgrest. postgrest
 import java.util.UUID
-import io. github. jan. supabase. gotrue. auth
 
 class RequestsRepositoryImpl : RequestsRepository {
 
     private val supabase = SupabaseClient.client
 
-    override suspend fun addRequest(category: String, title: String, description: String, preferredDate: String) {
+    /** Insert a new request */
+    override suspend fun addRequest(
+        category: String,
+        title: String,
+        description: String,
+        preferredDate: String
+    ) {
         val user = supabase.auth.currentUserOrNull() ?: return
-        supabase.from("requests").insert(
+
+        supabase.postgrest.from("requests").insert(
             mapOf(
                 "user_id" to user.id,
                 "category" to category,
                 "title" to title,
                 "description" to description,
                 "preferred_date" to preferredDate,
-                "status" to "pending"
+                "status" to "Pending"    // FIXED: standardized
             )
         )
     }
 
+    /** Fetch all requests created by this user */
     override suspend fun getMyRequests(): List<ServiceRequest> {
         val user = supabase.auth.currentUserOrNull() ?: return emptyList()
 
-        val rows = supabase
+        val rows = supabase.postgrest
             .from("requests")
             .select {
-                filter {
-                    eq("user_id", user.id)
-                }
+                filter { eq("user_id", user.id) }
             }
             .decodeList<JsonObject>()
 
+        // Safely map → does NOT break your current ServiceRequest model
         return rows.mapNotNull { row ->
             try {
                 ServiceRequest(
@@ -51,9 +59,11 @@ class RequestsRepositoryImpl : RequestsRepository {
         }
     }
 
+    /** Cancel a request belonging to this user */
     override suspend fun cancelRequest(requestId: UUID) {
         val user = supabase.auth.currentUserOrNull() ?: return
-        supabase.from("requests").update(
+
+        supabase.postgrest.from("requests").update(
             mapOf("is_cancelled" to true)
         ) {
             filter {
@@ -63,13 +73,12 @@ class RequestsRepositoryImpl : RequestsRepository {
         }
     }
 
+    /** Update request status (admin/provider use case) */
     override suspend fun updateRequestStatus(requestId: UUID, status: String) {
-        supabase.from("requests").update(
+        supabase.postgrest.from("requests").update(
             mapOf("status" to status)
         ) {
-            filter {
-                eq("id", requestId.toString())
-            }
+            filter { eq("id", requestId.toString()) }
         }
     }
 }

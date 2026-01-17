@@ -150,10 +150,17 @@ fun AddRequestScreen(
                                 category, title, description, preferredDate
                             )
                             focusManager.clearFocus()
+
+                            // 🔥 Notify previous screen to refresh
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("refresh_requests", true)
                         }
+
                         navController.popBackStack()
                     }
-                },
+                }
+                ,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Submit Request", fontWeight = FontWeight.Bold)

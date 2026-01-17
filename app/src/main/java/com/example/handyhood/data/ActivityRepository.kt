@@ -10,9 +10,9 @@ object ActivityRepository {
 
     private val auth = SupabaseClient.client.auth
     private val db = SupabaseClient.client.postgrest
+
     suspend fun markAllRead() {
-        val user = auth.currentUserOrNull()
-            ?: throw IllegalStateException("Not authenticated")
+        val user = auth.currentUserOrNull() ?: return  // ✅ SAFE FIX
 
         db.from("activities").update(
             mapOf("is_read" to true)
@@ -26,12 +26,10 @@ object ActivityRepository {
         }
     }
 
-
     suspend fun fetchMyActivities(): List<Map<String, Any?>> {
-        val user = auth.currentUserOrNull()
-            ?: throw IllegalStateException("Not authenticated")
+        val user = auth.currentUserOrNull() ?: return emptyList()  // ✅ SAFE FIX
 
-        val rows: List<JsonObject> = db
+        val rows = db
             .from("activities")
             .select {
                 filter {
@@ -40,13 +38,11 @@ object ActivityRepository {
                         eq("provider_id", user.id)
                     }
                 }
-                order("created_at", Order.DESCENDING) // ✅ CORRECT FOR 2.5.x
+                order("created_at", Order.DESCENDING)
                 limit(20)
             }
-            .decodeList()
+            .decodeList<JsonObject>()
 
-        return rows.map { json ->
-            json.mapValues { it.value }
-        }
+        return rows.map { json -> json.mapValues { it.value } }
     }
 }
