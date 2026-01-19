@@ -7,4 +7,6 @@ sealed class AuthResult {
     object Loading : AuthResult()
     data class Success(val user: UserInfo?) : AuthResult()
     data class Error(val message: String) : AuthResult()
+    data class Message(val message: String) : AuthResult() // ✅ for reset email feedback
 }
+

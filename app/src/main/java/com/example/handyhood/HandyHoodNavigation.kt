@@ -8,20 +8,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-import com.example.handyhood.ui.screens.*
-import com.example.handyhood.data.ActivityViewModel
-import androidx. compose. ui. graphics. vector. ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.handyhood.auth.SupabaseAuthViewModel
+import com.example.handyhood.data.ActivityViewModel
+import com.example.handyhood.ui.screens.*
 
 sealed class Screen(
     val route: String,
     val title: String,
-    val icon: ImageVector
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Rounded.Home)
     object Search : Screen("search", "Search", Icons.Rounded.Search)
     object Inbox : Screen("inbox", "Inbox", Icons.Rounded.Inbox)
     object Profile : Screen("profile", "Profile", Icons.Rounded.Person)
+    object Login : Screen("login", "Login", Icons.Rounded.Person)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,8 +30,8 @@ sealed class Screen(
 fun HandyHoodNavigation() {
 
     val navController = rememberNavController()
+    val authViewModel: SupabaseAuthViewModel = viewModel()
 
-    // ⭐ REQUIRED for top bar recomposition
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route
 
@@ -51,12 +52,10 @@ fun HandyHoodNavigation() {
                     title = { Text("HandyHood") },
                     actions = {
                         IconButton(onClick = { navController.navigate("activity") }) {
-                            BadgedBox(
-                                badge = { if (hasUnread) Badge() }
-                            ) {
+                            BadgedBox(badge = { if (hasUnread) Badge() }) {
                                 Icon(
                                     Icons.Rounded.NotificationsActive,
-                                    contentDescription = "Activity",
+                                    contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -113,11 +112,26 @@ fun HandyHoodNavigation() {
             }
 
             composable(Screen.Profile.route) {
-                ProfileScreen("User", {})
+                ProfileScreen(
+                    userName = "User",
+                    onSignOut = {
+                        authViewModel.signOut()
+                        navController.navigate("Login") {
+                            popUpTo(0)
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.Login.route) {
+                LoginScreen(navController = navController)
             }
 
             composable("add_request") {
-                AddRequestScreen(navController, com.example.handyhood.data.RequestsRepositoryImpl())
+                AddRequestScreen(
+                    navController,
+                    com.example.handyhood.data.RequestsRepositoryImpl()
+                )
             }
 
             composable("requests") {

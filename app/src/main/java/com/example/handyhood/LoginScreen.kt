@@ -5,22 +5,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
     viewModel: SupabaseAuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -29,16 +27,14 @@ fun LoginScreen(
     var showForgotDialog by remember { mutableStateOf(false) }
     var resetEmail by remember { mutableStateOf("") }
     var isSignup by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()  // ✅ Added for navigation
 
     val authState by viewModel.authState.collectAsState()
 
-    /* ---------- AUTH SUCCESS ---------- */
+    // ✅ Navigate ONLY on real login/signup
     LaunchedEffect(authState) {
         if (authState is AuthResult.Success) {
-            navController.navigate("dashboard") {  // ✅ Fixed: Use navController
+            navController.navigate("dashboard") {
                 popUpTo("login") { inclusive = true }
-                popUpTo("welcome") { inclusive = true }
             }
         }
     }
@@ -47,9 +43,10 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Text(
             text = if (isSignup) "Create Account" else "Login",
             style = MaterialTheme.typography.headlineMedium
@@ -57,42 +54,42 @@ fun LoginScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        /* ---------- EMAIL ---------- */
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-            singleLine = true,
+            leadingIcon = { Icon(Icons.Default.Email, null) },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(16.dp))
 
-        /* ---------- PASSWORD ---------- */
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = null
+                        if (passwordVisible)
+                            Icons.Default.Visibility
+                        else
+                            Icons.Default.VisibilityOff,
+                        null
                     )
                 }
             },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            singleLine = true,
+            visualTransformation =
+                if (passwordVisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
-        /* ---------- FORGOT PASSWORD ---------- */
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = { showForgotDialog = true }) {
@@ -102,63 +99,54 @@ fun LoginScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        /* ---------- LOGIN / SIGNUP ---------- */
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
-                if (isSignup) {
+                if (isSignup)
                     viewModel.signUp(email.trim(), password)
-                } else {
+                else
                     viewModel.signIn(email.trim(), password)
-                }
             }
         ) {
             Text(if (isSignup) "Sign Up" else "Login")
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        /* ---------- TOGGLE ---------- */
         TextButton(onClick = { isSignup = !isSignup }) {
             Text(
-                if (isSignup) "Already have an account? Login"
-                else "New user? Create account"
+                if (isSignup)
+                    "Already have an account? Login"
+                else
+                    "New user? Create account"
             )
         }
 
         Spacer(Modifier.height(16.dp))
 
-        /* ---------- STATE FEEDBACK ---------- */
         when (authState) {
             is AuthResult.Loading -> CircularProgressIndicator()
             is AuthResult.Error -> Text(
-                text = (authState as AuthResult.Error).message,
+                (authState as AuthResult.Error).message,
                 color = MaterialTheme.colorScheme.error
+            )
+            is AuthResult.Message -> Text(
+                (authState as AuthResult.Message).message,
+                color = MaterialTheme.colorScheme.primary
             )
             else -> {}
         }
     }
 
-    /* ---------- FORGOT PASSWORD DIALOG ---------- */
     if (showForgotDialog) {
         AlertDialog(
             onDismissRequest = { showForgotDialog = false },
             title = { Text("Reset password") },
             text = {
-                Column {
-                    Text(
-                        "Enter your email and we'll send you a reset link.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = resetEmail,
-                        onValueChange = { resetEmail = it },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                OutlinedTextField(
+                    value = resetEmail,
+                    onValueChange = { resetEmail = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             confirmButton = {
                 TextButton(

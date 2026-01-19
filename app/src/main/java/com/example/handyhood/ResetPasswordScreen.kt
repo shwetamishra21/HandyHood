@@ -16,8 +16,8 @@ import com.example.handyhood.auth.SupabaseAuthViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResetPasswordScreen(
-    viewModel: SupabaseAuthViewModel = viewModel(),
-    onPasswordUpdated: () -> Unit
+    onPasswordUpdated: () -> Unit,
+    viewModel: SupabaseAuthViewModel = viewModel()
 ) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -51,7 +51,7 @@ fun ResetPasswordScreen(
         ) {
 
             Text(
-                text = "Create a new password",
+                "Create a new password",
                 style = MaterialTheme.typography.headlineSmall
             )
 
@@ -61,9 +61,7 @@ fun ResetPasswordScreen(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("New password") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, null)
-                },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -74,9 +72,7 @@ fun ResetPasswordScreen(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm password") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, null)
-                },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -84,7 +80,7 @@ fun ResetPasswordScreen(
             Spacer(Modifier.height(24.dp))
 
             Button(
-                enabled = isValid,
+                enabled = isValid && authState !is AuthResult.Loading,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     viewModel.updatePassword(password)
@@ -96,16 +92,14 @@ fun ResetPasswordScreen(
             Spacer(Modifier.height(16.dp))
 
             when (authState) {
-                is AuthResult.Loading -> {
+                is AuthResult.Loading ->
                     CircularProgressIndicator()
-                }
 
-                is AuthResult.Error -> {
+                is AuthResult.Error ->
                     Text(
-                        text = (authState as AuthResult.Error).message,
+                        (authState as AuthResult.Error).message,
                         color = MaterialTheme.colorScheme.error
                     )
-                }
 
                 else -> {}
             }
