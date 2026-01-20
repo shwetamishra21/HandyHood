@@ -25,6 +25,7 @@
             android:theme="@style/Theme.HandyHood"
             android:windowSoftInputMode="adjustResize">
 
+
             <!-- APP LAUNCH -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -41,6 +42,18 @@
                     android:scheme="handyhood"
                     android:host="reset" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="handyhood"
+                    android:host="auth"
+                    android:path="/reset" />
+            </intent-filter>
+
 
         </activity>
 

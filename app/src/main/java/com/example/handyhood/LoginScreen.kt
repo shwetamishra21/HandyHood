@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com. example. handyhood. auth. AuthResult
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.handyhood.auth.AuthResult
 import com.example.handyhood.auth.SupabaseAuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,14 +30,20 @@ fun LoginScreen(
 
     val authState by viewModel.authState.collectAsState()
 
-    // ✅ Navigate ONLY on real login/signup
+    // React to auth events
     LaunchedEffect(authState) {
-        if (authState is AuthResult.Success) {
-            navController.navigate("dashboard") {
-                popUpTo("login") { inclusive = true }
+        when (authState) {
+            is AuthResult.Success -> {
+                navController.navigate("dashboard") {
+                    popUpTo("login") { inclusive = true }
+                }
             }
+            // For password reset emails, just show message - no navigation
+            is AuthResult.Message -> { /* already shown in UI below */ }
+            else -> {}
         }
     }
+
 
     Column(
         modifier = Modifier

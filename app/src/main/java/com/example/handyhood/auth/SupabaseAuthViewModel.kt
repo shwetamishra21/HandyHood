@@ -9,6 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+sealed class AuthResult {
+    object Idle : AuthResult()
+    object Loading : AuthResult()
+    data class Success(val user: Any?) : AuthResult()
+    data class Error(val message: String) : AuthResult()
+    data class Message(val message: String) : AuthResult()
+    object RequirePasswordReset : AuthResult()
+}
+
 class SupabaseAuthViewModel : ViewModel() {
 
     private val auth = SupabaseClient.client.auth
@@ -18,12 +27,14 @@ class SupabaseAuthViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
+            // restore session if stored
             auth.loadFromStorage()
-            _authState.value =
-                if (auth.currentUserOrNull() != null)
-                    AuthResult.Success(auth.currentUserOrNull())
-                else
-                    AuthResult.Idle
+            val user = auth.currentUserOrNull()
+            if (user != null) {
+                _authState.value = AuthResult.Success(user)
+            } else {
+                _authState.value = AuthResult.Idle
+            }
         }
     }
 
@@ -37,11 +48,9 @@ class SupabaseAuthViewModel : ViewModel() {
                     this.email = email
                     this.password = password
                 }
-                _authState.value =
-                    AuthResult.Success(auth.currentUserOrNull())
+                _authState.value = AuthResult.Success(auth.currentUserOrNull())
             } catch (e: Exception) {
-                _authState.value =
-                    AuthResult.Error(e.message ?: "Login failed")
+                _authState.value = AuthResult.Error(e.message ?: "Login failed")
             }
         }
     }
@@ -56,11 +65,9 @@ class SupabaseAuthViewModel : ViewModel() {
                     this.email = email
                     this.password = password
                 }
-                _authState.value =
-                    AuthResult.Success(auth.currentUserOrNull())
+                _authState.value = AuthResult.Success(auth.currentUserOrNull())
             } catch (e: Exception) {
-                _authState.value =
-                    AuthResult.Error(e.message ?: "Signup failed")
+                _authState.value = AuthResult.Error(e.message ?: "Signup failed")
             }
         }
     }
@@ -83,12 +90,34 @@ class SupabaseAuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _authState.value = AuthResult.Loading
+
+                // Version without redirectTo named parameter
                 auth.resetPasswordForEmail(email)
-                _authState.value =
-                    AuthResult.Message("Password reset email sent")
+
+                _authState.value = AuthResult.Message("Password reset email sent")
             } catch (e: Exception) {
                 _authState.value =
                     AuthResult.Error(e.message ?: "Failed to send reset email")
+            }
+        }
+    }
+
+
+    /* ---------------- HANDLE DEEP LINK ---------------- */
+
+    fun handleDeepLink(uri: String) {
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthResult.Loading
+
+                // NOTE: if your supabase-kt version uses a different name,
+                // change just this line to the correct function.
+                auth.exchangeCodeForSession(uri)
+
+                _authState.value = AuthResult.RequirePasswordReset
+            } catch (e: Exception) {
+                _authState.value =
+                    AuthResult.Error(e.message ?: "Failed to handle link")
             }
         }
     }
@@ -102,8 +131,7 @@ class SupabaseAuthViewModel : ViewModel() {
                 auth.updateUser {
                     password = newPassword
                 }
-                _authState.value =
-                    AuthResult.Success(auth.currentUserOrNull())
+                _authState.value = AuthResult.Success(auth.currentUserOrNull())
             } catch (e: Exception) {
                 _authState.value =
                     AuthResult.Error(e.message ?: "Password update failed")
