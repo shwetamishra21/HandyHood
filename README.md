@@ -1,5 +1,6 @@
 # HandyHood
 
+
 A production-focused Android application for managing local service requests with real-time synchronization. Built on Jetpack Compose and Supabase, HandyHood prioritizes backend-enforced business rules and clean architecture over UI-only state management.
 
 **Current Status**: Core user request flow complete with real-time updates. Provider features in active development.
