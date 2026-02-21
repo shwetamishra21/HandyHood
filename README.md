@@ -5,6 +5,7 @@ A production-focused Android application for managing local service requests wit
 
 **Current Status**: Core user request flow complete with real-time updates. Provider features in active development.
 
+
 ## Key Features
 
 - **Authenticated Request Management**: Create, edit, and cancel service requests with full lifecycle tracking
