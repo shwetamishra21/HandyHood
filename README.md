@@ -23,7 +23,6 @@ A production-focused Android application for managing local service requests wit
 - **Supabase Project**: Active project with Auth and Realtime enabled
 
 
-
 **Critical Dependencies**:
 ```gradle
 - Kotlin: 1.9.0+
