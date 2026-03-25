@@ -121,7 +121,7 @@ Or use Android Studio's run button. The app requires a physical device or emulat
 3. Fill in:
     - Category: "Plumbing" (or any service type)
     - Title: "Fix leaking kitchen faucet"
-    - Description: Optional details
+    - Description: Optional detail
     - Preferred Date: Select from date picker
 4. Submit
 
