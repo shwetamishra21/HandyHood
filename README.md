@@ -8,7 +8,7 @@ A production-focused Android application for managing local service requests wit
 
 - **Authenticated Request Management**: Create, edit, and cancel service requests with full lifecycle tracking
 - **Real-time Synchronization**: Automatic UI updates via Supabase Realtime with  debounced refresh logic
-- **Backend-Enforced Rules**: Database-level Row Level Security (RLS) ensures data integrity independent of client state
+- **Backend-Enforced Rules**: Database-level Row Level Security (RLS) ensures data integrity independent of client states
 - **Lifecycle State Machine**: Requests follow controlled state transitions (pending → accepted → completed) with immutability rules
 - **Session Persistence**: Authentication state survives app restarts and process death
 
